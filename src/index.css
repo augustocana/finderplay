@@ -217,11 +217,11 @@
   }
 
   .level-1 {
-    @apply bg-emerald-100 text-emerald-700;
+    @apply bg-red-100 text-red-700;
   }
 
   .level-2 {
-    @apply bg-teal-100 text-teal-700;
+    @apply bg-orange-100 text-orange-700;
   }
 
   .level-3 {
@@ -229,11 +229,11 @@
   }
 
   .level-4 {
-    @apply bg-orange-100 text-orange-700;
+    @apply bg-teal-100 text-teal-700;
   }
 
   .level-5 {
-    @apply bg-red-100 text-red-700;
+    @apply bg-emerald-100 text-emerald-700;
   }
 
   .stat-card {

@@ -28,11 +28,11 @@ const frequencies: { value: PlayFrequency; label: string; description: string }[
 ];
 
 const skillLevels: { value: SkillLevel; label: string; description: string }[] = [
-  { value: 1, label: "Classe 1", description: "Iniciante - Aprendendo o básico" },
-  { value: 2, label: "Classe 2", description: "Intermediário - Peladas casuais" },
+  { value: 1, label: "Classe 1", description: "Profissional - Alto nível" },
+  { value: 2, label: "Classe 2", description: "Expert - Nível competitivo" },
   { value: 3, label: "Classe 3", description: "Avançado - Jogo consistente" },
-  { value: 4, label: "Classe 4", description: "Expert - Nível competitivo" },
-  { value: 5, label: "Classe 5", description: "Profissional - Alto nível" },
+  { value: 4, label: "Classe 4", description: "Intermediário - Peladas casuais" },
+  { value: 5, label: "Classe 5", description: "Iniciante - Aprendendo o básico" },
 ];
 
 const daysOfWeek: { value: DayOfWeek; label: string }[] = [
