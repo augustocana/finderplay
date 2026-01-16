@@ -318,6 +318,123 @@ export const LandingPage = () => {
         </div>
       </section>
 
+      {/* Level System Section */}
+      <section className="py-20 px-6 bg-gradient-to-b from-background to-muted/30">
+        <div className="container mx-auto">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-4">
+              <Trophy className="w-4 h-4" />
+              <span className="text-sm font-medium">Sistema de Nível</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
+              Seu nível, <span className="text-gradient-primary">comprovado</span> em quadra
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Quanto mais você joga, mais preciso fica seu nível. Conquiste selos de confiança 
+              e encontre adversários realmente compatíveis.
+            </p>
+          </div>
+
+          {/* Level Progression Visual */}
+          <div className="max-w-4xl mx-auto">
+            <div className="grid md:grid-cols-3 gap-6">
+              {/* Iniciante */}
+              <div className="card-elevated p-6 text-center relative overflow-hidden group hover:shadow-xl transition-all">
+                <div className="absolute top-0 left-0 w-full h-1 bg-muted-foreground/20" />
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                  <span className="text-2xl">🎾</span>
+                </div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">0-5 partidas</div>
+                <h3 className="font-bold text-lg text-foreground mb-2">Nível Inicial</h3>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted text-muted-foreground text-sm mb-3">
+                  <div className="w-2 h-2 rounded-full bg-muted-foreground/50" />
+                  <span>Estimado</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Baseado na sua autoavaliação. Jogue para confirmar!
+                </p>
+              </div>
+
+              {/* Em Validação */}
+              <div className="card-elevated p-6 text-center relative overflow-hidden group hover:shadow-xl transition-all border-accent/30">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-muted-foreground/20 via-accent to-muted-foreground/20" />
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-accent/20 flex items-center justify-center border-2 border-accent/50">
+                  <span className="text-2xl">⚡</span>
+                </div>
+                <div className="text-xs text-accent uppercase tracking-wide mb-1 font-medium">6-15 partidas</div>
+                <h3 className="font-bold text-lg text-foreground mb-2">Em Validação</h3>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/20 text-accent text-sm mb-3">
+                  <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                  <span>Calibrando</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  O sistema está aprendendo seu nível real com cada partida.
+                </p>
+                {/* Progress indicator */}
+                <div className="mt-4 flex justify-center gap-1">
+                  {[1,2,3,4,5].map((i) => (
+                    <div key={i} className={`w-6 h-1.5 rounded-full ${i <= 3 ? 'bg-accent' : 'bg-muted'}`} />
+                  ))}
+                </div>
+              </div>
+
+              {/* Confirmado */}
+              <div className="card-elevated p-6 text-center relative overflow-hidden group hover:shadow-xl transition-all border-primary/30 bg-gradient-to-b from-primary/5 to-transparent">
+                <div className="absolute top-0 left-0 w-full h-1 gradient-primary" />
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full gradient-primary flex items-center justify-center shadow-lg">
+                  <span className="text-2xl">🏆</span>
+                </div>
+                <div className="text-xs text-primary uppercase tracking-wide mb-1 font-medium">16+ partidas</div>
+                <h3 className="font-bold text-lg text-foreground mb-2">Nível Confirmado</h3>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/20 text-primary text-sm mb-3 font-medium">
+                  <Star className="w-3 h-3 fill-primary" />
+                  <span>Verificado</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Seu nível foi comprovado! Adversários confiam no seu ranking.
+                </p>
+                {/* Badge */}
+                <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/30">
+                  <span className="text-primary text-sm font-semibold">Classe 3</span>
+                  <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">PRO</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Benefits */}
+            <div className="mt-12 grid sm:grid-cols-3 gap-4 text-center">
+              <div className="flex flex-col items-center gap-2 p-4">
+                <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-accent" />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  <strong className="text-foreground">Partidas equilibradas</strong><br />
+                  Jogue contra quem está no seu nível
+                </p>
+              </div>
+              <div className="flex flex-col items-center gap-2 p-4">
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Target className="w-5 h-5 text-primary" />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  <strong className="text-foreground">Evolução justa</strong><br />
+                  Seu nível sobe com vitórias reais
+                </p>
+              </div>
+              <div className="flex flex-col items-center gap-2 p-4">
+                <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                  <Trophy className="w-5 h-5 text-yellow-500" />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  <strong className="text-foreground">Credibilidade</strong><br />
+                  Selo de jogador verificado
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 px-6">
         <div className="container mx-auto">
