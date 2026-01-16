@@ -1,4 +1,4 @@
-import { ChevronRight, Trophy, Users, Target, Zap } from "lucide-react";
+import { ChevronRight, Trophy, Users, Target, Zap, Search, MessageCircle, Calendar, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/hero-tennis.jpg";
@@ -23,6 +23,109 @@ const features = [
     icon: Zap,
     title: "Marque fácil",
     description: "Crie convites em segundos e receba interessados rapidamente",
+  },
+];
+
+const flowSteps = [
+  {
+    step: 1,
+    icon: Calendar,
+    title: "Crie seu convite",
+    description: "Escolha dia, horário e local",
+    mockup: (
+      <div className="bg-card rounded-xl p-4 shadow-lg border border-border">
+        <div className="text-xs text-muted-foreground mb-2">Novo Jogo</div>
+        <div className="space-y-2">
+          <div className="h-8 bg-muted rounded-lg flex items-center px-3 text-sm">📅 Sábado, 10h</div>
+          <div className="h-8 bg-muted rounded-lg flex items-center px-3 text-sm">📍 Pinheiros, SP</div>
+          <div className="h-8 bg-muted rounded-lg flex items-center px-3 text-sm">🎾 Classe 3</div>
+        </div>
+        <div className="mt-3 h-9 rounded-lg gradient-primary flex items-center justify-center text-sm font-medium text-primary-foreground">
+          Publicar Convite
+        </div>
+      </div>
+    ),
+  },
+  {
+    step: 2,
+    icon: Search,
+    title: "Jogadores encontram",
+    description: "Seu convite aparece para jogadores compatíveis",
+    mockup: (
+      <div className="bg-card rounded-xl p-4 shadow-lg border border-border">
+        <div className="text-xs text-muted-foreground mb-2">Jogos Disponíveis</div>
+        <div className="space-y-2">
+          <div className="p-2 bg-accent/10 rounded-lg border border-accent/30">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-xs">🎾</div>
+              <div>
+                <div className="text-sm font-medium">Você</div>
+                <div className="text-xs text-muted-foreground">Sáb 10h • Pinheiros</div>
+              </div>
+            </div>
+          </div>
+          <div className="p-2 bg-muted/50 rounded-lg opacity-60">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-muted"></div>
+              <div className="space-y-1">
+                <div className="h-3 w-16 bg-muted rounded"></div>
+                <div className="h-2 w-20 bg-muted rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    step: 3,
+    icon: MessageCircle,
+    title: "Aceite e combine",
+    description: "Aprove o parceiro e conversem pelo chat",
+    mockup: (
+      <div className="bg-card rounded-xl p-4 shadow-lg border border-border">
+        <div className="text-xs text-muted-foreground mb-2">Solicitação</div>
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center text-white text-sm">MR</div>
+          <div>
+            <div className="text-sm font-medium">Marcos R.</div>
+            <div className="text-xs text-muted-foreground">Classe 3 • ⭐ 4.8</div>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <div className="flex-1 h-8 rounded-lg bg-destructive/20 text-destructive text-sm flex items-center justify-center">Recusar</div>
+          <div className="flex-1 h-8 rounded-lg gradient-primary text-primary-foreground text-sm flex items-center justify-center">Aceitar</div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    step: 4,
+    icon: Star,
+    title: "Jogue e avalie",
+    description: "Registre o placar e evolua seu nível",
+    mockup: (
+      <div className="bg-card rounded-xl p-4 shadow-lg border border-border">
+        <div className="text-xs text-muted-foreground mb-2">Registrar Resultado</div>
+        <div className="flex justify-center gap-4 mb-3">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-foreground">6</div>
+            <div className="text-xs text-muted-foreground">Você</div>
+          </div>
+          <div className="text-xl text-muted-foreground">x</div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-foreground">4</div>
+            <div className="text-xs text-muted-foreground">Marcos</div>
+          </div>
+        </div>
+        <div className="flex justify-center gap-1 mb-2">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <span key={i} className={i <= 4 ? "text-yellow-500" : "text-muted"}>⭐</span>
+          ))}
+        </div>
+        <div className="text-xs text-center text-accent font-medium">+15 pontos de nível!</div>
+      </div>
+    ),
   },
 ];
 
@@ -114,7 +217,7 @@ export const LandingPage = () => {
               Tudo que você precisa para jogar mais
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              O TênisMate simplifica a marcação de partidas e te ajuda a encontrar 
+              O Partiu Tênis simplifica a marcação de partidas e te ajuda a encontrar 
               jogadores compatíveis na sua região.
             </p>
           </div>
@@ -166,10 +269,69 @@ export const LandingPage = () => {
         </div>
       </section>
 
+      {/* How it Works Section */}
+      <section className="py-20 px-6 bg-muted/30">
+        <div className="container mx-auto">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/20 text-accent-foreground mb-4">
+              <span className="text-sm font-medium">Como funciona</span>
+            </div>
+            <h2 className="text-3xl font-bold text-foreground mb-4">
+              Marque seu jogo em 4 passos
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Simples assim: crie, encontre, combine e jogue. Sem burocracia.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {flowSteps.map((item, index) => (
+              <div
+                key={item.step}
+                className="relative animate-fade-in-up"
+                style={{ animationDelay: `${index * 0.15}s` }}
+              >
+                {/* Step number */}
+                <div className="absolute -top-3 -left-3 w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm z-10">
+                  {item.step}
+                </div>
+                
+                {/* Mockup */}
+                <div className="mb-4 transform hover:scale-105 transition-transform duration-300">
+                  {item.mockup}
+                </div>
+                
+                {/* Text */}
+                <h3 className="font-bold text-foreground mb-1">{item.title}</h3>
+                <p className="text-sm text-muted-foreground">{item.description}</p>
+                
+                {/* Connector arrow (not on last item) */}
+                {index < flowSteps.length - 1 && (
+                  <div className="hidden lg:block absolute top-1/3 -right-4 text-muted-foreground/30">
+                    <ChevronRight className="w-8 h-8" />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center mt-12">
+            <Button
+              variant="tennis"
+              size="xl"
+              onClick={() => navigate("/onboarding")}
+            >
+              Quero jogar!
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="py-8 px-6 border-t border-border">
         <div className="container mx-auto text-center text-muted-foreground text-sm">
-          <p>© 2024 TênisMate. Todos os direitos reservados.</p>
+          <p>© 2024 Partiu Tênis. Todos os direitos reservados.</p>
         </div>
       </footer>
     </div>
