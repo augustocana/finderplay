@@ -1,4 +1,4 @@
-import { ChevronRight, Trophy, Users, Target, Zap, Search, MessageCircle, Calendar, Star } from "lucide-react";
+import { ChevronRight, Trophy, Users, Target, Zap, Search, MessageCircle, Calendar, Star, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/hero-tennis.jpg";
@@ -26,105 +26,183 @@ const features = [
   },
 ];
 
+// Phone frame component for mockups
+const PhoneMockup = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
+  <div className={`relative mx-auto ${className}`}>
+    {/* Phone frame */}
+    <div className="relative bg-foreground rounded-[2rem] p-2 shadow-2xl">
+      {/* Notch */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-6 bg-foreground rounded-b-xl z-20" />
+      {/* Screen */}
+      <div className="relative bg-background rounded-[1.5rem] overflow-hidden">
+        {/* Status bar */}
+        <div className="h-7 bg-background flex items-center justify-between px-6 text-[10px] text-muted-foreground">
+          <span>9:41</span>
+          <div className="flex items-center gap-1">
+            <span>📶</span>
+            <span>🔋</span>
+          </div>
+        </div>
+        {/* Content */}
+        <div className="px-3 pb-4">
+          {children}
+        </div>
+        {/* Home indicator */}
+        <div className="h-5 flex items-center justify-center">
+          <div className="w-24 h-1 bg-muted-foreground/30 rounded-full" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 const flowSteps = [
   {
     step: 1,
-    icon: Calendar,
     title: "Crie seu convite",
     description: "Escolha dia, horário e local",
     mockup: (
-      <div className="bg-card rounded-xl p-4 shadow-lg border border-border">
-        <div className="text-xs text-muted-foreground mb-2">Novo Jogo</div>
+      <PhoneMockup className="w-44">
         <div className="space-y-2">
-          <div className="h-8 bg-muted rounded-lg flex items-center px-3 text-sm">📅 Sábado, 10h</div>
-          <div className="h-8 bg-muted rounded-lg flex items-center px-3 text-sm">📍 Pinheiros, SP</div>
-          <div className="h-8 bg-muted rounded-lg flex items-center px-3 text-sm">🎾 Classe 3</div>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-6 h-6 rounded-full gradient-primary flex items-center justify-center">
+              <span className="text-[8px] text-primary-foreground font-bold">JF</span>
+            </div>
+            <span className="text-xs font-semibold text-foreground">Novo Jogo</span>
+          </div>
+          <div className="h-7 bg-muted rounded-lg flex items-center px-2 text-[10px] gap-1">
+            <Calendar className="w-3 h-3 text-primary" />
+            <span>Sábado, 10h</span>
+          </div>
+          <div className="h-7 bg-muted rounded-lg flex items-center px-2 text-[10px] gap-1">
+            <span>📍</span>
+            <span>Pinheiros, SP</span>
+          </div>
+          <div className="h-7 bg-muted rounded-lg flex items-center px-2 text-[10px] gap-1">
+            <span>🎾</span>
+            <span>Classe 3</span>
+          </div>
+          <div className="h-7 rounded-lg gradient-primary flex items-center justify-center text-[10px] font-medium text-primary-foreground mt-2">
+            Publicar Convite
+          </div>
         </div>
-        <div className="mt-3 h-9 rounded-lg gradient-primary flex items-center justify-center text-sm font-medium text-primary-foreground">
-          Publicar Convite
-        </div>
-      </div>
+      </PhoneMockup>
     ),
   },
   {
     step: 2,
-    icon: Search,
     title: "Jogadores encontram",
     description: "Seu convite aparece para jogadores compatíveis",
     mockup: (
-      <div className="bg-card rounded-xl p-4 shadow-lg border border-border">
-        <div className="text-xs text-muted-foreground mb-2">Jogos Disponíveis</div>
+      <PhoneMockup className="w-44">
         <div className="space-y-2">
-          <div className="p-2 bg-accent/10 rounded-lg border border-accent/30">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-foreground">Explorar</span>
+            <Search className="w-3 h-3 text-muted-foreground" />
+          </div>
+          <div className="p-2 bg-accent/10 rounded-xl border border-accent/30">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-xs">🎾</div>
-              <div>
-                <div className="text-sm font-medium">Você</div>
-                <div className="text-xs text-muted-foreground">Sáb 10h • Pinheiros</div>
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                <span className="text-[8px] text-white font-bold">VÇ</span>
+              </div>
+              <div className="flex-1">
+                <div className="text-[10px] font-semibold">Seu convite</div>
+                <div className="text-[8px] text-muted-foreground">Sáb 10h • Pinheiros</div>
+              </div>
+              <div className="text-[8px] text-accent font-medium">Novo!</div>
+            </div>
+          </div>
+          <div className="p-2 bg-muted/50 rounded-xl">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-muted" />
+              <div className="flex-1 space-y-1">
+                <div className="h-2 w-14 bg-muted-foreground/20 rounded" />
+                <div className="h-1.5 w-20 bg-muted-foreground/10 rounded" />
               </div>
             </div>
           </div>
-          <div className="p-2 bg-muted/50 rounded-lg opacity-60">
+          <div className="p-2 bg-muted/30 rounded-xl opacity-50">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-muted"></div>
-              <div className="space-y-1">
-                <div className="h-3 w-16 bg-muted rounded"></div>
-                <div className="h-2 w-20 bg-muted rounded"></div>
+              <div className="w-8 h-8 rounded-full bg-muted" />
+              <div className="flex-1 space-y-1">
+                <div className="h-2 w-12 bg-muted-foreground/20 rounded" />
+                <div className="h-1.5 w-16 bg-muted-foreground/10 rounded" />
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </PhoneMockup>
     ),
   },
   {
     step: 3,
-    icon: MessageCircle,
     title: "Aceite e combine",
     description: "Aprove o parceiro e conversem pelo chat",
     mockup: (
-      <div className="bg-card rounded-xl p-4 shadow-lg border border-border">
-        <div className="text-xs text-muted-foreground mb-2">Solicitação</div>
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center text-white text-sm">MR</div>
-          <div>
-            <div className="text-sm font-medium">Marcos R.</div>
-            <div className="text-xs text-muted-foreground">Classe 3 • ⭐ 4.8</div>
+      <PhoneMockup className="w-44">
+        <div className="space-y-2">
+          <div className="text-xs font-semibold text-foreground mb-2">Solicitação</div>
+          <div className="bg-muted/50 rounded-xl p-3">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center">
+                <span className="text-[10px] text-white font-bold">MR</span>
+              </div>
+              <div>
+                <div className="text-[11px] font-semibold">Marcos R.</div>
+                <div className="text-[9px] text-muted-foreground">Classe 3 • ⭐ 4.8</div>
+              </div>
+            </div>
+            <div className="text-[9px] text-muted-foreground mb-3 bg-background rounded-lg p-2">
+              "Opa! Vi seu convite, topo jogar! 🎾"
+            </div>
+            <div className="flex gap-2">
+              <div className="flex-1 h-7 rounded-lg bg-destructive/20 text-destructive text-[10px] flex items-center justify-center font-medium">
+                Recusar
+              </div>
+              <div className="flex-1 h-7 rounded-lg gradient-primary text-primary-foreground text-[10px] flex items-center justify-center font-medium">
+                Aceitar ✓
+              </div>
+            </div>
           </div>
         </div>
-        <div className="flex gap-2">
-          <div className="flex-1 h-8 rounded-lg bg-destructive/20 text-destructive text-sm flex items-center justify-center">Recusar</div>
-          <div className="flex-1 h-8 rounded-lg gradient-primary text-primary-foreground text-sm flex items-center justify-center">Aceitar</div>
-        </div>
-      </div>
+      </PhoneMockup>
     ),
   },
   {
     step: 4,
-    icon: Star,
     title: "Jogue e avalie",
     description: "Registre o placar e evolua seu nível",
     mockup: (
-      <div className="bg-card rounded-xl p-4 shadow-lg border border-border">
-        <div className="text-xs text-muted-foreground mb-2">Registrar Resultado</div>
-        <div className="flex justify-center gap-4 mb-3">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-foreground">6</div>
-            <div className="text-xs text-muted-foreground">Você</div>
-          </div>
-          <div className="text-xl text-muted-foreground">x</div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-foreground">4</div>
-            <div className="text-xs text-muted-foreground">Marcos</div>
+      <PhoneMockup className="w-44">
+        <div className="space-y-2">
+          <div className="text-xs font-semibold text-foreground text-center mb-2">Resultado</div>
+          <div className="bg-muted/50 rounded-xl p-3">
+            <div className="flex justify-center items-center gap-3 mb-3">
+              <div className="text-center">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent mx-auto mb-1 flex items-center justify-center">
+                  <span className="text-[9px] text-white font-bold">VÇ</span>
+                </div>
+                <div className="text-xl font-black text-primary">6</div>
+              </div>
+              <div className="text-lg text-muted-foreground font-light">×</div>
+              <div className="text-center">
+                <div className="w-10 h-10 rounded-full bg-muted mx-auto mb-1 flex items-center justify-center">
+                  <span className="text-[9px] font-bold">MR</span>
+                </div>
+                <div className="text-xl font-black text-foreground">4</div>
+              </div>
+            </div>
+            <div className="flex justify-center gap-0.5 mb-2">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Star key={i} className={`w-4 h-4 ${i <= 5 ? "text-yellow-500 fill-yellow-500" : "text-muted"}`} />
+              ))}
+            </div>
+            <div className="text-[10px] text-center text-accent font-semibold bg-accent/10 rounded-full py-1">
+              🎉 +15 pontos de nível!
+            </div>
           </div>
         </div>
-        <div className="flex justify-center gap-1 mb-2">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <span key={i} className={i <= 4 ? "text-yellow-500" : "text-muted"}>⭐</span>
-          ))}
-        </div>
-        <div className="text-xs text-center text-accent font-medium">+15 pontos de nível!</div>
-      </div>
+      </PhoneMockup>
     ),
   },
 ];
@@ -217,7 +295,7 @@ export const LandingPage = () => {
               Tudo que você precisa para jogar mais
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              O Partiu Tênis simplifica a marcação de partidas e te ajuda a encontrar 
+              O Jogue Fácil simplifica a marcação de partidas e te ajuda a encontrar 
               jogadores compatíveis na sua região.
             </p>
           </div>
@@ -331,7 +409,7 @@ export const LandingPage = () => {
       {/* Footer */}
       <footer className="py-8 px-6 border-t border-border">
         <div className="container mx-auto text-center text-muted-foreground text-sm">
-          <p>© 2024 Partiu Tênis. Todos os direitos reservados.</p>
+          <p>© 2024 Jogue Fácil. Todos os direitos reservados.</p>
         </div>
       </footer>
     </div>
