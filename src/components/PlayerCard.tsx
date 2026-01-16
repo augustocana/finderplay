@@ -8,11 +8,11 @@ interface PlayerCardProps {
 
 const getLevelLabel = (level: SkillLevel) => {
   const labels: Record<SkillLevel, string> = {
-    1: "Iniciante",
-    2: "Intermediário",
+    1: "Profissional",
+    2: "Expert",
     3: "Avançado",
-    4: "Expert",
-    5: "Profissional",
+    4: "Intermediário",
+    5: "Iniciante",
   };
   return labels[level];
 };
