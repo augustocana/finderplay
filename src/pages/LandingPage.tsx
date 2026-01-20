@@ -295,8 +295,8 @@ export const LandingPage = () => {
               Tudo que você precisa para jogar mais
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              O Jogue Fácil simplifica a marcação de partidas e te ajuda a encontrar 
-              jogadores compatíveis na sua região.
+              Play Finder simplifies match scheduling and helps you find 
+              compatible players in your area.
             </p>
           </div>
 
@@ -526,7 +526,7 @@ export const LandingPage = () => {
       {/* Footer */}
       <footer className="py-8 px-6 border-t border-border">
         <div className="container mx-auto text-center text-muted-foreground text-sm">
-          <p>© 2024 Jogue Fácil. Todos os direitos reservados.</p>
+          <p>© 2024 Play Finder. All rights reserved.</p>
         </div>
       </footer>
     </div>
