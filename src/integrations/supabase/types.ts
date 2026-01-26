@@ -84,10 +84,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "game_invites_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "game_invites_matched_player_id_fkey"
             columns: ["matched_player_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_invites_matched_player_id_fkey"
+            columns: ["matched_player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
             referencedColumns: ["id"]
           },
         ]
@@ -130,6 +144,13 @@ export type Database = {
             columns: ["requester_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
             referencedColumns: ["id"]
           },
         ]
@@ -178,10 +199,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "messages_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "messages_sender_id_fkey"
             columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
             referencedColumns: ["id"]
           },
         ]
@@ -263,7 +298,54 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      profiles_public: {
+        Row: {
+          availability: Json | null
+          avatar_url: string | null
+          average_rating: number | null
+          city: string | null
+          dominant_hand: string | null
+          frequency: string | null
+          games_played: number | null
+          id: string | null
+          name: string | null
+          reliability: number | null
+          skill_level: number | null
+          win_rate: number | null
+          years_playing: number | null
+        }
+        Insert: {
+          availability?: Json | null
+          avatar_url?: string | null
+          average_rating?: number | null
+          city?: string | null
+          dominant_hand?: string | null
+          frequency?: string | null
+          games_played?: number | null
+          id?: string | null
+          name?: string | null
+          reliability?: number | null
+          skill_level?: number | null
+          win_rate?: number | null
+          years_playing?: number | null
+        }
+        Update: {
+          availability?: Json | null
+          avatar_url?: string | null
+          average_rating?: number | null
+          city?: string | null
+          dominant_hand?: string | null
+          frequency?: string | null
+          games_played?: number | null
+          id?: string | null
+          name?: string | null
+          reliability?: number | null
+          skill_level?: number | null
+          win_rate?: number | null
+          years_playing?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
