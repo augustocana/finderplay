@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -8,10 +8,14 @@ import {
   Calendar,
   Trophy,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { PlayFrequency, SkillLevel, DayOfWeek, TimeSlot } from "@/types/tennis";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { toast } from "@/hooks/use-toast";
 
 const steps = [
   { id: 1, title: "Sobre você" },
@@ -53,7 +57,10 @@ const timeSlots: { value: TimeSlot; label: string }[] = [
 
 export const OnboardingPage = () => {
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+  const { profile, loading: profileLoading, createProfile } = useProfile();
   const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     dominantHand: "direita" as "direita" | "esquerda" | "ambas",
@@ -65,6 +72,16 @@ export const OnboardingPage = () => {
     maxTravelRadius: 10,
     availability: [] as { day: DayOfWeek; slots: TimeSlot[] }[],
   });
+
+  // Redirect if not logged in or already has profile
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/auth");
+    }
+    if (!profileLoading && profile) {
+      navigate("/explore");
+    }
+  }, [user, profile, authLoading, profileLoading, navigate]);
 
   const updateForm = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -112,13 +129,47 @@ export const OnboardingPage = () => {
     });
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step < 4) {
       setStep(step + 1);
     } else {
-      // Complete onboarding
-      console.log("Onboarding complete:", formData);
-      navigate("/explore");
+      // Complete onboarding - save to database
+      setIsSubmitting(true);
+      try {
+        const { error } = await createProfile({
+          name: formData.name,
+          dominant_hand: formData.dominantHand,
+          frequency: formData.frequency,
+          years_playing: formData.yearsPlaying,
+          skill_level: formData.skillLevel,
+          city: formData.city,
+          neighborhood: formData.neighborhood,
+          max_travel_radius: formData.maxTravelRadius,
+          availability: formData.availability,
+        });
+
+        if (error) {
+          toast({
+            title: "Erro ao salvar perfil",
+            description: error.message,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Perfil criado! 🎾",
+            description: "Bem-vindo ao Play Finder!",
+          });
+          navigate("/explore");
+        }
+      } catch (error) {
+        toast({
+          title: "Erro",
+          description: "Algo deu errado. Tente novamente.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -141,6 +192,14 @@ export const OnboardingPage = () => {
         return true;
     }
   };
+
+  if (authLoading || profileLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -406,10 +465,19 @@ export const OnboardingPage = () => {
               size="lg"
               className="w-full"
               onClick={handleNext}
-              disabled={!canProceed()}
+              disabled={!canProceed() || isSubmitting}
             >
-              {step === 4 ? "Concluir cadastro" : "Continuar"}
-              <ChevronRight className="w-5 h-5" />
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Salvando...
+                </>
+              ) : step === 4 ? (
+                "Concluir cadastro"
+              ) : (
+                "Continuar"
+              )}
+              {!isSubmitting && <ChevronRight className="w-5 h-5" />}
             </Button>
           </div>
         </div>

@@ -14,7 +14,253 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      game_invites: {
+        Row: {
+          city: string
+          court_address: string | null
+          court_name: string | null
+          created_at: string | null
+          creator_id: string
+          date: string
+          desired_level: number
+          game_type: string
+          id: string
+          level_range_max: number | null
+          level_range_min: number | null
+          matched_player_id: string | null
+          max_radius: number | null
+          neighborhood: string
+          notes: string | null
+          status: string
+          time_slot: string
+          updated_at: string | null
+        }
+        Insert: {
+          city: string
+          court_address?: string | null
+          court_name?: string | null
+          created_at?: string | null
+          creator_id: string
+          date: string
+          desired_level: number
+          game_type?: string
+          id?: string
+          level_range_max?: number | null
+          level_range_min?: number | null
+          matched_player_id?: string | null
+          max_radius?: number | null
+          neighborhood: string
+          notes?: string | null
+          status?: string
+          time_slot: string
+          updated_at?: string | null
+        }
+        Update: {
+          city?: string
+          court_address?: string | null
+          court_name?: string | null
+          created_at?: string | null
+          creator_id?: string
+          date?: string
+          desired_level?: number
+          game_type?: string
+          id?: string
+          level_range_max?: number | null
+          level_range_min?: number | null
+          matched_player_id?: string | null
+          max_radius?: number | null
+          neighborhood?: string
+          notes?: string | null
+          status?: string
+          time_slot?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_invites_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_invites_matched_player_id_fkey"
+            columns: ["matched_player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_requests: {
+        Row: {
+          created_at: string | null
+          id: string
+          invite_id: string
+          message: string | null
+          requester_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          invite_id: string
+          message?: string | null
+          requester_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          invite_id?: string
+          message?: string | null
+          requester_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_requests_invite_id_fkey"
+            columns: ["invite_id"]
+            isOneToOne: false
+            referencedRelation: "game_invites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          invite_id: string | null
+          read: boolean | null
+          receiver_id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          invite_id?: string | null
+          read?: boolean | null
+          receiver_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          invite_id?: string | null
+          read?: boolean | null
+          receiver_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_invite_id_fkey"
+            columns: ["invite_id"]
+            isOneToOne: false
+            referencedRelation: "game_invites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          age: number | null
+          availability: Json | null
+          avatar_url: string | null
+          average_rating: number | null
+          city: string
+          created_at: string | null
+          dominant_hand: string
+          frequency: string
+          games_played: number | null
+          gender: string | null
+          has_taken_lessons: boolean | null
+          id: string
+          max_travel_radius: number | null
+          name: string
+          neighborhood: string
+          reliability: number | null
+          skill_level: number
+          tournaments: number | null
+          updated_at: string | null
+          user_id: string
+          win_rate: number | null
+          years_playing: number | null
+        }
+        Insert: {
+          age?: number | null
+          availability?: Json | null
+          avatar_url?: string | null
+          average_rating?: number | null
+          city: string
+          created_at?: string | null
+          dominant_hand?: string
+          frequency?: string
+          games_played?: number | null
+          gender?: string | null
+          has_taken_lessons?: boolean | null
+          id?: string
+          max_travel_radius?: number | null
+          name: string
+          neighborhood: string
+          reliability?: number | null
+          skill_level?: number
+          tournaments?: number | null
+          updated_at?: string | null
+          user_id: string
+          win_rate?: number | null
+          years_playing?: number | null
+        }
+        Update: {
+          age?: number | null
+          availability?: Json | null
+          avatar_url?: string | null
+          average_rating?: number | null
+          city?: string
+          created_at?: string | null
+          dominant_hand?: string
+          frequency?: string
+          games_played?: number | null
+          gender?: string | null
+          has_taken_lessons?: boolean | null
+          id?: string
+          max_travel_radius?: number | null
+          name?: string
+          neighborhood?: string
+          reliability?: number | null
+          skill_level?: number
+          tournaments?: number | null
+          updated_at?: string | null
+          user_id?: string
+          win_rate?: number | null
+          years_playing?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
