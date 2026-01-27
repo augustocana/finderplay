@@ -13,8 +13,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { PlayFrequency, SkillLevel, DayOfWeek, TimeSlot } from "@/types/tennis";
-import { useAuth } from "@/hooks/useAuth";
-import { useProfile } from "@/hooks/useProfile";
+import { useAnonymousProfile } from "@/hooks/useAnonymousProfile";
 import { toast } from "@/hooks/use-toast";
 
 const steps = [
@@ -57,8 +56,7 @@ const timeSlots: { value: TimeSlot; label: string }[] = [
 
 export const OnboardingPage = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
-  const { profile, loading: profileLoading, createProfile } = useProfile();
+  const { profile, loading: profileLoading, createProfile, anonymousUserId } = useAnonymousProfile();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -73,15 +71,12 @@ export const OnboardingPage = () => {
     availability: [] as { day: DayOfWeek; slots: TimeSlot[] }[],
   });
 
-  // Redirect if not logged in or already has profile
+  // Redirect if already has profile
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/auth");
-    }
     if (!profileLoading && profile) {
       navigate("/explore");
     }
-  }, [user, profile, authLoading, profileLoading, navigate]);
+  }, [profile, profileLoading, navigate]);
 
   const updateForm = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -193,7 +188,7 @@ export const OnboardingPage = () => {
     }
   };
 
-  if (authLoading || profileLoading) {
+  if (profileLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -475,9 +470,11 @@ export const OnboardingPage = () => {
               ) : step === 4 ? (
                 "Concluir cadastro"
               ) : (
-                "Continuar"
+                <>
+                  Continuar
+                  <ArrowRight className="w-5 h-5" />
+                </>
               )}
-              {!isSubmitting && <ChevronRight className="w-5 h-5" />}
             </Button>
           </div>
         </div>

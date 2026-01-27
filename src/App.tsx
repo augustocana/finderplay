@@ -3,28 +3,26 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./hooks/useAuth";
+import { AnonymousUserProvider } from "./hooks/useAnonymousUser";
 import LandingPage from "./pages/LandingPage";
 import ExplorePage from "./pages/ExplorePage";
 import CreateGamePage from "./pages/CreateGamePage";
 import ProfilePage from "./pages/ProfilePage";
 import ChatPage from "./pages/ChatPage";
 import OnboardingPage from "./pages/OnboardingPage";
-import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
+    <AnonymousUserProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<LandingPage />} />
-            <Route path="/auth" element={<AuthPage />} />
             <Route path="/explore" element={<ExplorePage />} />
             <Route path="/create" element={<CreateGamePage />} />
             <Route path="/profile" element={<ProfilePage />} />
@@ -35,7 +33,7 @@ const App = () => (
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
-    </AuthProvider>
+    </AnonymousUserProvider>
   </QueryClientProvider>
 );
 
