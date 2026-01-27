@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "./useAuth";
+import { useAnonymousUser } from "./useAnonymousUser";
 import { Json } from "@/integrations/supabase/types";
 
-export interface Profile {
+export interface AnonymousProfile {
   id: string;
-  user_id: string;
+  anonymous_user_id: string;
   name: string;
   age: number | null;
   gender: string | null;
@@ -28,34 +28,33 @@ export interface Profile {
   updated_at: string;
 }
 
-export const useProfile = () => {
-  const { user } = useAuth();
-  const [profile, setProfile] = useState<Profile | null>(null);
+export const useAnonymousProfile = () => {
+  const { anonymousUserId, isLoading: userLoading } = useAnonymousUser();
+  const [profile, setProfile] = useState<AnonymousProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
+    if (!userLoading && anonymousUserId) {
       fetchProfile();
-    } else {
-      setProfile(null);
+    } else if (!userLoading && !anonymousUserId) {
       setLoading(false);
     }
-  }, [user]);
+  }, [anonymousUserId, userLoading]);
 
   const fetchProfile = async () => {
-    if (!user) return;
+    if (!anonymousUserId) return;
 
     try {
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("anonymous_user_id", anonymousUserId)
         .maybeSingle();
 
       if (error) {
         console.error("Error fetching profile:", error);
       } else {
-        setProfile(data);
+        setProfile(data as AnonymousProfile | null);
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -64,13 +63,13 @@ export const useProfile = () => {
     }
   };
 
-  const createProfile = async (profileData: Partial<Profile>) => {
-    if (!user) return { error: new Error("Not authenticated") };
+  const createProfile = async (profileData: Partial<AnonymousProfile>) => {
+    if (!anonymousUserId) return { error: new Error("No anonymous user ID") };
 
     const { data, error } = await supabase
       .from("profiles")
       .insert({
-        user_id: user.id,
+        anonymous_user_id: anonymousUserId,
         name: profileData.name || "",
         dominant_hand: profileData.dominant_hand || "direita",
         frequency: profileData.frequency || "casual",
@@ -89,12 +88,12 @@ export const useProfile = () => {
       return { error };
     }
 
-    setProfile(data);
+    setProfile(data as AnonymousProfile);
     return { data, error: null };
   };
 
-  const updateProfile = async (profileData: Partial<Profile>) => {
-    if (!user || !profile) return { error: new Error("Not authenticated or no profile") };
+  const updateProfile = async (profileData: Partial<AnonymousProfile>) => {
+    if (!anonymousUserId || !profile) return { error: new Error("No profile to update") };
 
     const { data, error } = await supabase
       .from("profiles")
@@ -108,9 +107,9 @@ export const useProfile = () => {
       return { error };
     }
 
-    setProfile(data);
+    setProfile(data as AnonymousProfile);
     return { data, error: null };
   };
 
-  return { profile, loading, fetchProfile, createProfile, updateProfile };
+  return { profile, loading: loading || userLoading, fetchProfile, createProfile, updateProfile, anonymousUserId };
 };
