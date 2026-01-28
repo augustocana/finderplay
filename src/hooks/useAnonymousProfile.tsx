@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect, useMemo } from "react";
+import { getSupabaseClient } from "@/lib/supabaseWithAuth";
 import { useAnonymousUser } from "./useAnonymousUser";
 import { Json } from "@/integrations/supabase/types";
+import { profileSchema, validateData } from "@/lib/validationSchemas";
 
 export interface AnonymousProfile {
   id: string;
@@ -33,6 +34,9 @@ export const useAnonymousProfile = () => {
   const [profile, setProfile] = useState<AnonymousProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Create supabase client with anonymous user header
+  const supabase = useMemo(() => getSupabaseClient(), []);
+
   useEffect(() => {
     if (!userLoading && anonymousUserId) {
       fetchProfile();
@@ -52,12 +56,16 @@ export const useAnonymousProfile = () => {
         .maybeSingle();
 
       if (error) {
-        console.error("Error fetching profile:", error);
+        if (import.meta.env.DEV) {
+          console.error("Error fetching profile:", error);
+        }
       } else {
         setProfile(data as AnonymousProfile | null);
       }
     } catch (error) {
-      console.error("Error fetching profile:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching profile:", error);
+      }
     } finally {
       setLoading(false);
     }
@@ -66,26 +74,51 @@ export const useAnonymousProfile = () => {
   const createProfile = async (profileData: Partial<AnonymousProfile>) => {
     if (!anonymousUserId) return { error: new Error("No anonymous user ID") };
 
-    const { data, error } = await supabase
+    // Validate input data
+    const validationResult = validateData(profileSchema, {
+      name: profileData.name || "",
+      city: profileData.city || "",
+      neighborhood: profileData.neighborhood || "",
+      years_playing: profileData.years_playing,
+      skill_level: profileData.skill_level || 3,
+      frequency: profileData.frequency || "casual",
+      dominant_hand: profileData.dominant_hand || "direita",
+      max_travel_radius: profileData.max_travel_radius || 10,
+      availability: profileData.availability,
+    });
+
+    if (!validationResult.success) {
+      const errorResult = validationResult as { success: false; errors: string[] };
+      return { error: new Error(errorResult.errors.join(", ")) };
+    }
+
+    const validatedData = validationResult.data;
+
+    // Get fresh client to ensure header is current
+    const client = getSupabaseClient();
+    
+    const { data, error } = await client
       .from("profiles")
       .insert({
         anonymous_user_id: anonymousUserId,
-        name: profileData.name || "",
-        dominant_hand: profileData.dominant_hand || "direita",
-        frequency: profileData.frequency || "casual",
-        years_playing: profileData.years_playing || 0,
-        skill_level: profileData.skill_level || 3,
-        city: profileData.city || "",
-        neighborhood: profileData.neighborhood || "",
-        max_travel_radius: profileData.max_travel_radius || 10,
-        availability: profileData.availability || [],
+        name: validationResult.data.name,
+        dominant_hand: validationResult.data.dominant_hand,
+        frequency: validationResult.data.frequency,
+        years_playing: validationResult.data.years_playing || 0,
+        skill_level: validationResult.data.skill_level,
+        city: validationResult.data.city,
+        neighborhood: validationResult.data.neighborhood,
+        max_travel_radius: validationResult.data.max_travel_radius || 10,
+        availability: validationResult.data.availability || [],
       })
       .select()
       .single();
 
     if (error) {
-      console.error("Error creating profile:", error);
-      return { error };
+      if (import.meta.env.DEV) {
+        console.error("Error creating profile:", error);
+      }
+      return { error: new Error("Unable to create profile. Please try again.") };
     }
 
     setProfile(data as AnonymousProfile);
@@ -95,7 +128,10 @@ export const useAnonymousProfile = () => {
   const updateProfile = async (profileData: Partial<AnonymousProfile>) => {
     if (!anonymousUserId || !profile) return { error: new Error("No profile to update") };
 
-    const { data, error } = await supabase
+    // Get fresh client to ensure header is current
+    const client = getSupabaseClient();
+
+    const { data, error } = await client
       .from("profiles")
       .update(profileData)
       .eq("id", profile.id)
@@ -103,8 +139,10 @@ export const useAnonymousProfile = () => {
       .single();
 
     if (error) {
-      console.error("Error updating profile:", error);
-      return { error };
+      if (import.meta.env.DEV) {
+        console.error("Error updating profile:", error);
+      }
+      return { error: new Error("Unable to update profile. Please try again.") };
     }
 
     setProfile(data as AnonymousProfile);
