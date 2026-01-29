@@ -1,11 +1,9 @@
-import { Home, Search, PlusCircle, MessageCircle, User } from "lucide-react";
+import { Home, PlusCircle, User } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 const navItems = [
-  { icon: Home, label: "Início", path: "/" },
-  { icon: Search, label: "Explorar", path: "/explore" },
-  { icon: PlusCircle, label: "Criar", path: "/create" },
-  { icon: MessageCircle, label: "Chat", path: "/chat" },
+  { icon: Home, label: "Jogos", path: "/games" },
+  { icon: PlusCircle, label: "Criar", path: "/games", action: "create" },
   { icon: User, label: "Perfil", path: "/profile" },
 ];
 
@@ -15,13 +13,13 @@ export const BottomNavigation = () => {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-border/50 px-4 py-2 safe-area-bottom">
       <div className="max-w-lg mx-auto flex items-center justify-around">
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
+        {navItems.map((item, index) => {
+          const isActive = location.pathname === item.path && !item.action;
           const Icon = item.icon;
           
           return (
             <Link
-              key={item.path}
+              key={index}
               to={item.path}
               className={`nav-item ${isActive ? "active" : ""}`}
             >

@@ -1,224 +1,162 @@
-import { useEffect } from "react";
+import { ArrowLeft, User, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import {
-  Settings,
-  ChevronRight,
-  Star,
-  Trophy,
-  TrendingUp,
-  MapPin,
-  Clock,
-  Target,
-  Calendar,
-  Edit2,
-  Loader2,
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BottomNavigation } from "@/components/BottomNavigation";
-import { SkillLevel } from "@/types/tennis";
-import { useAnonymousProfile } from "@/hooks/useAnonymousProfile";
+import { useSimpleUser } from "@/hooks/useSimpleUser";
+import { useGames } from "@/hooks/useGames";
+import { useState } from "react";
+import { toast } from "@/hooks/use-toast";
 
-const getLevelLabel = (level: SkillLevel) => {
-  const labels: Record<SkillLevel, string> = {
-    1: "Profissional",
-    2: "Expert",
-    3: "Avançado",
-    4: "Intermediário",
-    5: "Iniciante",
-  };
-  return labels[level];
-};
-
-const getFrequencyLabel = (freq: string) => {
-  const labels: Record<string, string> = {
-    iniciante: "Iniciante",
-    casual: "Casual",
-    regular: "Regular",
-    competitivo: "Competitivo",
-  };
-  return labels[freq] || freq;
-};
+const USER_KEY = "play_finder_user";
+const GAMES_KEY = "play_finder_games";
+const MESSAGES_KEY = "play_finder_messages";
 
 export const ProfilePage = () => {
   const navigate = useNavigate();
-  const { profile, loading } = useAnonymousProfile();
+  const { user, setUserName } = useSimpleUser();
+  const { myCreatedGames, myParticipatingGames } = useGames();
+  const [isEditing, setIsEditing] = useState(false);
+  const [newName, setNewName] = useState(user?.name || "");
 
-  useEffect(() => {
-    if (!loading && !profile) {
-      navigate("/onboarding");
+  const handleSaveName = () => {
+    if (newName.trim().length < 2) {
+      toast({
+        title: "Nome muito curto",
+        description: "Nome deve ter pelo menos 2 caracteres",
+        variant: "destructive",
+      });
+      return;
     }
-  }, [loading, profile, navigate]);
+    
+    setUserName(newName.trim());
+    setIsEditing(false);
+    toast({
+      title: "Nome atualizado!",
+      description: "Seu nome foi alterado com sucesso.",
+    });
+  };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  const handleLogout = () => {
+    if (confirm("Tem certeza que deseja sair? Seus dados locais serão mantidos.")) {
+      localStorage.removeItem(USER_KEY);
+      navigate("/");
+      window.location.reload();
+    }
+  };
 
-  if (!profile) {
-    return null;
-  }
+  const handleClearData = () => {
+    if (confirm("Tem certeza que deseja apagar todos os dados? Esta ação não pode ser desfeita.")) {
+      localStorage.removeItem(USER_KEY);
+      localStorage.removeItem(GAMES_KEY);
+      localStorage.removeItem(MESSAGES_KEY);
+      navigate("/");
+      window.location.reload();
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <header className="relative">
-        {/* Cover */}
-        <div className="h-32 gradient-primary" />
-
-        {/* Profile Info */}
-        <div className="px-6 -mt-16">
-          <div className="flex items-end gap-4 mb-4">
-            <div className="relative">
-              <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground font-bold text-4xl border-4 border-background shadow-lg">
-                {profile.name.charAt(0)}
-              </div>
-              <button className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-accent flex items-center justify-center shadow-md">
-                <Edit2 className="w-4 h-4 text-accent-foreground" />
-              </button>
-            </div>
-            <div className="flex-1 pb-2">
-              <h1 className="text-2xl font-bold text-foreground">
-                {profile.name}
-              </h1>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <MapPin className="w-4 h-4" />
-                <span>
-                  {profile.neighborhood}, {profile.city}
-                </span>
-              </div>
-            </div>
-            <Button variant="ghost" size="icon">
-              <Settings className="w-5 h-5" />
-            </Button>
-          </div>
-
-          {/* Level Badge */}
-          <div className="flex items-center gap-3 mb-6">
-            <span className={`level-badge level-${profile.skill_level}`}>
-              <Target className="w-4 h-4" />
-              Classe {profile.skill_level} - {getLevelLabel(profile.skill_level as SkillLevel)}
-            </span>
-            <span className="level-badge bg-secondary text-secondary-foreground">
-              <Clock className="w-4 h-4" />
-              {getFrequencyLabel(profile.frequency)}
-            </span>
-          </div>
+      <header className="sticky top-0 z-40 glass border-b border-border/50 px-6 py-4">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <h1 className="text-xl font-bold text-foreground">Meu Perfil</h1>
         </div>
       </header>
 
-      {/* Stats */}
-      <section className="px-6 mb-8">
-        <div className="grid grid-cols-4 gap-3">
-          <div className="stat-card">
-            <div className="flex items-center gap-1 text-accent mb-1">
-              <Star className="w-5 h-5 fill-accent" />
-              <span className="text-xl font-bold">{profile.average_rating?.toFixed(1) || "0.0"}</span>
-            </div>
-            <span className="text-xs text-muted-foreground">Avaliação</span>
+      {/* Content */}
+      <main className="p-6 space-y-6">
+        {/* Avatar e Nome */}
+        <div className="card-elevated p-6 text-center">
+          <div className="w-20 h-20 mx-auto mb-4 rounded-full gradient-primary flex items-center justify-center">
+            <User className="w-10 h-10 text-primary-foreground" />
           </div>
-          <div className="stat-card">
-            <div className="flex items-center gap-1 text-primary mb-1">
-              <Trophy className="w-5 h-5" />
-              <span className="text-xl font-bold">{profile.games_played || 0}</span>
-            </div>
-            <span className="text-xs text-muted-foreground">Jogos</span>
-          </div>
-          <div className="stat-card">
-            <div className="flex items-center gap-1 text-success mb-1">
-              <TrendingUp className="w-5 h-5" />
-              <span className="text-xl font-bold">{profile.win_rate || 0}%</span>
-            </div>
-            <span className="text-xs text-muted-foreground">Vitórias</span>
-          </div>
-          <div className="stat-card">
-            <div className="flex items-center gap-1 text-primary mb-1">
-              <Calendar className="w-5 h-5" />
-              <span className="text-xl font-bold">{profile.reliability || 100}%</span>
-            </div>
-            <span className="text-xs text-muted-foreground">Confiável</span>
-          </div>
-        </div>
-      </section>
-
-      {/* Menu Sections */}
-      <section className="px-6 space-y-4">
-        {/* My Games */}
-        <div className="card-elevated overflow-hidden">
-          <button className="w-full flex items-center justify-between p-4 hover:bg-secondary/50 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-primary" />
-              </div>
-              <div className="text-left">
-                <div className="font-semibold text-foreground">Meus jogos</div>
-                <div className="text-sm text-muted-foreground">
-                  Histórico e próximas partidas
-                </div>
+          
+          {isEditing ? (
+            <div className="space-y-3">
+              <input
+                type="text"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                className="input-field text-center"
+                maxLength={30}
+                autoFocus
+              />
+              <div className="flex gap-2 justify-center">
+                <Button variant="outline" onClick={() => setIsEditing(false)}>
+                  Cancelar
+                </Button>
+                <Button variant="tennis" onClick={handleSaveName}>
+                  Salvar
+                </Button>
               </div>
             </div>
-            <ChevronRight className="w-5 h-5 text-muted-foreground" />
-          </button>
+          ) : (
+            <>
+              <h2 className="text-2xl font-bold text-foreground mb-1">{user?.name}</h2>
+              <Button variant="link" onClick={() => setIsEditing(true)}>
+                Editar nome
+              </Button>
+            </>
+          )}
         </div>
 
-        {/* My Invites */}
-        <div className="card-elevated overflow-hidden">
-          <button className="w-full flex items-center justify-between p-4 hover:bg-secondary/50 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center">
-                <Trophy className="w-5 h-5 text-accent-foreground" />
-              </div>
-              <div className="text-left">
-                <div className="font-semibold text-foreground">Meus convites</div>
-                <div className="text-sm text-muted-foreground">
-                  Convites criados e recebidos
-                </div>
-              </div>
+        {/* Estatísticas */}
+        <div className="card-elevated p-5">
+          <h3 className="font-semibold text-foreground mb-4">Suas estatísticas</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center p-4 bg-secondary/50 rounded-xl">
+              <p className="text-2xl font-bold text-primary">{myCreatedGames.length}</p>
+              <p className="text-sm text-muted-foreground">Jogos criados</p>
             </div>
-            <div className="flex items-center gap-2">
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            <div className="text-center p-4 bg-secondary/50 rounded-xl">
+              <p className="text-2xl font-bold text-primary">{myParticipatingGames.length}</p>
+              <p className="text-sm text-muted-foreground">Participações</p>
             </div>
-          </button>
+          </div>
         </div>
 
-        {/* Edit Profile */}
-        <div className="card-elevated overflow-hidden">
-          <button className="w-full flex items-center justify-between p-4 hover:bg-secondary/50 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center">
-                <Edit2 className="w-5 h-5 text-secondary-foreground" />
-              </div>
-              <div className="text-left">
-                <div className="font-semibold text-foreground">Editar perfil</div>
-                <div className="text-sm text-muted-foreground">
-                  Disponibilidade, localização, nível
-                </div>
-              </div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-muted-foreground" />
-          </button>
+        {/* ID do usuário */}
+        <div className="card-elevated p-5">
+          <h3 className="font-semibold text-foreground mb-2">Seu ID</h3>
+          <p className="text-xs text-muted-foreground break-all font-mono bg-secondary/50 p-2 rounded">
+            {user?.id}
+          </p>
+          <p className="text-xs text-muted-foreground mt-2">
+            Este ID é usado para identificar você nos jogos e conversas.
+          </p>
         </div>
 
-        {/* Settings */}
-        <div className="card-elevated overflow-hidden">
-          <button className="w-full flex items-center justify-between p-4 hover:bg-secondary/50 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
-                <Settings className="w-5 h-5 text-muted-foreground" />
-              </div>
-              <div className="text-left">
-                <div className="font-semibold text-foreground">Configurações</div>
-                <div className="text-sm text-muted-foreground">
-                  Notificações, privacidade, conta
-                </div>
-              </div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-muted-foreground" />
-          </button>
+        {/* Ações */}
+        <div className="space-y-3">
+          <Button
+            variant="outline"
+            className="w-full justify-start"
+            onClick={handleLogout}
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Trocar de conta
+          </Button>
+          
+          <Button
+            variant="outline"
+            className="w-full justify-start text-destructive hover:text-destructive"
+            onClick={handleClearData}
+          >
+            Apagar todos os dados
+          </Button>
         </div>
-      </section>
+
+        {/* Info MVP */}
+        <div className="bg-secondary/30 rounded-xl p-4 text-center">
+          <p className="text-xs text-muted-foreground">
+            🚀 Play Finder MVP<br />
+            Dados armazenados localmente no navegador
+          </p>
+        </div>
+      </main>
 
       <BottomNavigation />
     </div>
