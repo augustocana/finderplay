@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { PlusCircle, Calendar, MapPin, Clock, Users, FileText, X } from "lucide-react";
+import { PlusCircle, Calendar, MapPin, Clock, FileText, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGames } from "@/hooks/useGames";
 import { toast } from "@/hooks/use-toast";
+import { GameType } from "@/types/game";
 
 interface CreateGameFormProps {
   onClose: () => void;
@@ -13,11 +14,12 @@ export const CreateGameForm = ({ onClose, onSuccess }: CreateGameFormProps) => {
   const { createGame } = useGames();
   const [formData, setFormData] = useState({
     title: "",
-    sport: "Tênis",
+    gameType: "simples" as GameType,
+    classMin: 3,
+    classMax: 5,
     location: "",
     date: "",
     time: "",
-    maxPlayers: 2,
     description: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -52,8 +54,16 @@ export const CreateGameForm = ({ onClose, onSuccess }: CreateGameFormProps) => {
       newErrors.time = "Horário é obrigatório";
     }
 
-    if (formData.maxPlayers < 2 || formData.maxPlayers > 20) {
-      newErrors.maxPlayers = "Número de jogadores deve ser entre 2 e 20";
+    if (formData.classMin < 1 || formData.classMin > 6) {
+      newErrors.classMin = "Classe deve ser entre 1 e 6";
+    }
+
+    if (formData.classMax < 1 || formData.classMax > 6) {
+      newErrors.classMax = "Classe deve ser entre 1 e 6";
+    }
+
+    if (formData.classMin > formData.classMax) {
+      newErrors.classRange = "Classe mínima não pode ser maior que a máxima";
     }
 
     if (formData.description.length > 200) {
@@ -71,18 +81,19 @@ export const CreateGameForm = ({ onClose, onSuccess }: CreateGameFormProps) => {
 
     const result = createGame({
       title: formData.title.trim(),
-      sport: formData.sport,
+      gameType: formData.gameType,
+      classMin: formData.classMin,
+      classMax: formData.classMax,
       location: formData.location.trim(),
       date: formData.date,
       time: formData.time,
-      maxPlayers: formData.maxPlayers,
       description: formData.description.trim() || undefined,
     });
 
     if (result) {
       toast({
         title: "Jogo criado! 🎾",
-        description: "Seu jogo está disponível para outros jogadores.",
+        description: `${formData.gameType === "simples" ? "Simples (2 jogadores)" : "Duplas (4 jogadores)"} criado com sucesso.`,
       });
       onSuccess();
     }
@@ -102,7 +113,7 @@ export const CreateGameForm = ({ onClose, onSuccess }: CreateGameFormProps) => {
         <div className="sticky top-0 bg-background border-b border-border px-6 py-4 flex items-center justify-between">
           <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
             <PlusCircle className="w-5 h-5 text-primary" />
-            Criar novo jogo
+            Criar jogo de tênis
           </h2>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="w-5 h-5" />
@@ -120,27 +131,83 @@ export const CreateGameForm = ({ onClose, onSuccess }: CreateGameFormProps) => {
               type="text"
               value={formData.title}
               onChange={(e) => updateField("title", e.target.value)}
-              placeholder="Ex: Pelada de sábado"
+              placeholder="Ex: Partida amistosa no clube"
               className="input-field"
               maxLength={50}
             />
             {errors.title && <p className="text-sm text-destructive mt-1">{errors.title}</p>}
           </div>
 
-          {/* Esporte */}
+          {/* Tipo de jogo */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">
-              Esporte *
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Tipo de jogo *
             </label>
-            <select
-              value={formData.sport}
-              onChange={(e) => updateField("sport", e.target.value)}
-              className="input-field"
-            >
-              <option value="Tênis">Tênis</option>
-              <option value="Beach Tennis">Beach Tennis</option>
-              <option value="Padel">Padel</option>
-            </select>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => updateField("gameType", "simples")}
+                className={`p-4 rounded-xl border-2 transition-all ${
+                  formData.gameType === "simples"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border hover:border-primary/50"
+                }`}
+              >
+                <div className="text-2xl mb-1">👤</div>
+                <div className="font-semibold">Simples</div>
+                <div className="text-xs text-muted-foreground">2 jogadores</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => updateField("gameType", "duplas")}
+                className={`p-4 rounded-xl border-2 transition-all ${
+                  formData.gameType === "duplas"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border hover:border-primary/50"
+                }`}
+              >
+                <div className="text-2xl mb-1">👥</div>
+                <div className="font-semibold">Duplas</div>
+                <div className="text-xs text-muted-foreground">4 jogadores</div>
+              </button>
+            </div>
+          </div>
+
+          {/* Classes */}
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Nível aceito (classes) *
+            </label>
+            <p className="text-xs text-muted-foreground mb-2">
+              1ª classe = mais avançado, 6ª classe = iniciante
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">De:</label>
+                <select
+                  value={formData.classMin}
+                  onChange={(e) => updateField("classMin", parseInt(e.target.value))}
+                  className="input-field"
+                >
+                  {[1, 2, 3, 4, 5, 6].map(c => (
+                    <option key={c} value={c}>{c}ª classe</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">Até:</label>
+                <select
+                  value={formData.classMax}
+                  onChange={(e) => updateField("classMax", parseInt(e.target.value))}
+                  className="input-field"
+                >
+                  {[1, 2, 3, 4, 5, 6].map(c => (
+                    <option key={c} value={c}>{c}ª classe</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {errors.classRange && <p className="text-sm text-destructive mt-1">{errors.classRange}</p>}
           </div>
 
           {/* Local */}
@@ -191,23 +258,6 @@ export const CreateGameForm = ({ onClose, onSuccess }: CreateGameFormProps) => {
             </div>
           </div>
 
-          {/* Número de jogadores */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1 flex items-center gap-1">
-              <Users className="w-4 h-4 text-primary" />
-              Número máximo de jogadores *
-            </label>
-            <input
-              type="number"
-              value={formData.maxPlayers}
-              onChange={(e) => updateField("maxPlayers", parseInt(e.target.value) || 2)}
-              min={2}
-              max={20}
-              className="input-field"
-            />
-            {errors.maxPlayers && <p className="text-sm text-destructive mt-1">{errors.maxPlayers}</p>}
-          </div>
-
           {/* Descrição */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-1 flex items-center gap-1">
@@ -217,7 +267,7 @@ export const CreateGameForm = ({ onClose, onSuccess }: CreateGameFormProps) => {
             <textarea
               value={formData.description}
               onChange={(e) => updateField("description", e.target.value)}
-              placeholder="Ex: Jogo amistoso para iniciantes..."
+              placeholder="Ex: Procuro parceiros para treinar..."
               className="input-field min-h-[80px] resize-none"
               maxLength={200}
             />

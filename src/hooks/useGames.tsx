@@ -1,39 +1,42 @@
 import { useState, useEffect } from "react";
-import { Game } from "@/types/game";
+import { Game, JoinRequest, GameType, getMaxPlayers } from "@/types/game";
 import { useSimpleUser } from "./useSimpleUser";
 
-const GAMES_KEY = "play_finder_games";
+const GAMES_KEY = "tennis_games";
+const REQUESTS_KEY = "tennis_requests";
 
-// Dados mock iniciais para demonstração
+// Dados mock iniciais
 const initialGames: Game[] = [
   {
     id: "game-1",
-    title: "Pelada de sábado",
-    sport: "Tênis",
+    title: "Partida amistosa",
+    gameType: "duplas",
+    classMin: 3,
+    classMax: 5,
     location: "Clube Pinheiros, São Paulo",
     date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     time: "09:00",
-    maxPlayers: 4,
-    currentPlayers: 2,
-    description: "Jogo amistoso para iniciantes e intermediários",
+    description: "Procurando parceiros para duplas. Nível intermediário.",
     creatorId: "demo-user-1",
     creatorName: "Ricardo",
-    participants: ["demo-user-1", "demo-user-2"],
+    participants: ["demo-user-1"],
+    participantNames: { "demo-user-1": "Ricardo" },
     createdAt: new Date().toISOString(),
   },
   {
     id: "game-2",
-    title: "Treino de domingo",
-    sport: "Tênis",
+    title: "Treino de simples",
+    gameType: "simples",
+    classMin: 2,
+    classMax: 4,
     location: "Quadra Municipal, Moema",
     date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     time: "14:00",
-    maxPlayers: 2,
-    currentPlayers: 1,
-    description: "Procuro parceiro para treinar saque",
+    description: "Procuro adversário para treinar saque e devolução",
     creatorId: "demo-user-2",
     creatorName: "Ana",
     participants: ["demo-user-2"],
+    participantNames: { "demo-user-2": "Ana" },
     createdAt: new Date().toISOString(),
   },
 ];
@@ -41,14 +44,17 @@ const initialGames: Game[] = [
 export const useGames = () => {
   const { user } = useSimpleUser();
   const [games, setGames] = useState<Game[]>([]);
+  const [requests, setRequests] = useState<JoinRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Carregar jogos do localStorage
+  // Carregar dados do localStorage
   useEffect(() => {
-    const stored = localStorage.getItem(GAMES_KEY);
-    if (stored) {
+    const storedGames = localStorage.getItem(GAMES_KEY);
+    const storedRequests = localStorage.getItem(REQUESTS_KEY);
+    
+    if (storedGames) {
       try {
-        setGames(JSON.parse(stored));
+        setGames(JSON.parse(storedGames));
       } catch {
         setGames(initialGames);
         localStorage.setItem(GAMES_KEY, JSON.stringify(initialGames));
@@ -57,17 +63,41 @@ export const useGames = () => {
       setGames(initialGames);
       localStorage.setItem(GAMES_KEY, JSON.stringify(initialGames));
     }
+
+    if (storedRequests) {
+      try {
+        setRequests(JSON.parse(storedRequests));
+      } catch {
+        setRequests([]);
+      }
+    }
+    
     setIsLoading(false);
   }, []);
 
-  // Salvar jogos no localStorage sempre que mudar
+  // Salvar jogos
   const saveGames = (newGames: Game[]) => {
     localStorage.setItem(GAMES_KEY, JSON.stringify(newGames));
     setGames(newGames);
   };
 
+  // Salvar requests
+  const saveRequests = (newRequests: JoinRequest[]) => {
+    localStorage.setItem(REQUESTS_KEY, JSON.stringify(newRequests));
+    setRequests(newRequests);
+  };
+
   // Criar novo jogo
-  const createGame = (gameData: Omit<Game, 'id' | 'creatorId' | 'creatorName' | 'currentPlayers' | 'participants' | 'createdAt'>) => {
+  const createGame = (gameData: {
+    title: string;
+    gameType: GameType;
+    classMin: number;
+    classMax: number;
+    location: string;
+    date: string;
+    time: string;
+    description?: string;
+  }) => {
     if (!user) return null;
 
     const newGame: Game = {
@@ -75,8 +105,8 @@ export const useGames = () => {
       id: `game-${Date.now()}`,
       creatorId: user.id,
       creatorName: user.name,
-      currentPlayers: 1,
       participants: [user.id],
+      participantNames: { [user.id]: user.name },
       createdAt: new Date().toISOString(),
     };
 
@@ -85,50 +115,122 @@ export const useGames = () => {
     return newGame;
   };
 
-  // Participar de um jogo
-  const joinGame = (gameId: string) => {
+  // Solicitar entrada em jogo
+  const requestJoin = (gameId: string) => {
     if (!user) return false;
 
-    const updatedGames = games.map(game => {
-      if (game.id === gameId && !game.participants.includes(user.id) && game.currentPlayers < game.maxPlayers) {
-        return {
-          ...game,
-          participants: [...game.participants, user.id],
-          currentPlayers: game.currentPlayers + 1,
-        };
-      }
-      return game;
-    });
+    const game = games.find(g => g.id === gameId);
+    if (!game) return false;
 
-    saveGames(updatedGames);
+    // Verificar se já é participante
+    if (game.participants.includes(user.id)) return false;
+
+    // Verificar se já tem solicitação pendente
+    const existingRequest = requests.find(
+      r => r.gameId === gameId && r.userId === user.id && r.status === "pending"
+    );
+    if (existingRequest) return false;
+
+    const newRequest: JoinRequest = {
+      id: `req-${Date.now()}`,
+      gameId,
+      userId: user.id,
+      userName: user.name,
+      status: "pending",
+      createdAt: new Date().toISOString(),
+    };
+
+    saveRequests([...requests, newRequest]);
     return true;
   };
 
-  // Sair de um jogo
-  const leaveGame = (gameId: string) => {
+  // Aceitar solicitação (organizador)
+  const acceptRequest = (requestId: string) => {
     if (!user) return false;
 
-    const updatedGames = games.map(game => {
-      if (game.id === gameId && game.participants.includes(user.id) && game.creatorId !== user.id) {
+    const request = requests.find(r => r.id === requestId);
+    if (!request) return false;
+
+    const game = games.find(g => g.id === request.gameId);
+    if (!game || game.creatorId !== user.id) return false;
+
+    // Verificar se ainda há vagas
+    const maxPlayers = getMaxPlayers(game.gameType);
+    if (game.participants.length >= maxPlayers) return false;
+
+    // Atualizar request
+    const updatedRequests = requests.map(r =>
+      r.id === requestId ? { ...r, status: "accepted" as const } : r
+    );
+    saveRequests(updatedRequests);
+
+    // Adicionar participante ao jogo
+    const updatedGames = games.map(g => {
+      if (g.id === request.gameId) {
         return {
-          ...game,
-          participants: game.participants.filter(id => id !== user.id),
-          currentPlayers: game.currentPlayers - 1,
+          ...g,
+          participants: [...g.participants, request.userId],
+          participantNames: { ...g.participantNames, [request.userId]: request.userName },
         };
       }
-      return game;
+      return g;
     });
-
     saveGames(updatedGames);
+
     return true;
   };
 
-  // Filtrar jogos
+  // Recusar solicitação (organizador)
+  const rejectRequest = (requestId: string) => {
+    if (!user) return false;
+
+    const request = requests.find(r => r.id === requestId);
+    if (!request) return false;
+
+    const game = games.find(g => g.id === request.gameId);
+    if (!game || game.creatorId !== user.id) return false;
+
+    const updatedRequests = requests.map(r =>
+      r.id === requestId ? { ...r, status: "rejected" as const } : r
+    );
+    saveRequests(updatedRequests);
+
+    return true;
+  };
+
+  // Obter status do usuário em um jogo
+  const getUserGameStatus = (gameId: string): "not_requested" | "pending" | "accepted" | "rejected" | "creator" => {
+    if (!user) return "not_requested";
+
+    const game = games.find(g => g.id === gameId);
+    if (!game) return "not_requested";
+
+    if (game.creatorId === user.id) return "creator";
+    if (game.participants.includes(user.id)) return "accepted";
+
+    const userRequest = requests.find(
+      r => r.gameId === gameId && r.userId === user.id
+    );
+    if (!userRequest) return "not_requested";
+
+    return userRequest.status;
+  };
+
+  // Obter solicitações pendentes para jogos que o usuário criou
+  const getPendingRequestsForMyGames = () => {
+    if (!user) return [];
+
+    const myGameIds = games.filter(g => g.creatorId === user.id).map(g => g.id);
+    return requests.filter(r => myGameIds.includes(r.gameId) && r.status === "pending");
+  };
+
+  // Filtros
   const availableGames = games.filter(game => {
     const gameDate = new Date(game.date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return gameDate >= today && game.currentPlayers < game.maxPlayers;
+    const maxPlayers = getMaxPlayers(game.gameType);
+    return gameDate >= today && game.participants.length < maxPlayers;
   });
 
   const myCreatedGames = user ? games.filter(game => game.creatorId === user.id) : [];
@@ -137,15 +239,25 @@ export const useGames = () => {
     game.participants.includes(user.id) && game.creatorId !== user.id
   ) : [];
 
+  const myPendingRequests = user ? requests.filter(
+    r => r.userId === user.id && r.status === "pending"
+  ) : [];
+
   return {
     games,
     availableGames,
     myCreatedGames,
     myParticipatingGames,
+    myPendingRequests,
+    requests,
     isLoading,
     createGame,
-    joinGame,
-    leaveGame,
+    requestJoin,
+    acceptRequest,
+    rejectRequest,
+    getUserGameStatus,
+    getPendingRequestsForMyGames,
     getGameById: (id: string) => games.find(g => g.id === id),
+    getRequestsForGame: (gameId: string) => requests.filter(r => r.gameId === gameId),
   };
 };
