@@ -1,13 +1,13 @@
-import { Game } from "@/types/game";
+import { Game, getMaxPlayers, formatClassRange } from "@/types/game";
 import { MapPin, Calendar, Clock, Users, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
 interface GameCardProps {
   game: Game;
-  showJoinButton?: boolean;
-  onJoin?: () => void;
-  isParticipating?: boolean;
+  showRequestButton?: boolean;
+  onRequestJoin?: () => void;
+  userStatus?: "not_requested" | "pending" | "accepted" | "rejected" | "creator";
 }
 
 const formatDate = (dateStr: string) => {
@@ -19,10 +19,27 @@ const formatDate = (dateStr: string) => {
   }).format(date);
 };
 
-export const GameCard = ({ game, showJoinButton = true, onJoin, isParticipating }: GameCardProps) => {
+export const GameCard = ({ game, showRequestButton = true, onRequestJoin, userStatus = "not_requested" }: GameCardProps) => {
   const navigate = useNavigate();
-  const spotsLeft = game.maxPlayers - game.currentPlayers;
+  const maxPlayers = getMaxPlayers(game.gameType);
+  const currentPlayers = game.participants.length;
+  const spotsLeft = maxPlayers - currentPlayers;
   const isFull = spotsLeft <= 0;
+
+  const getStatusBadge = () => {
+    switch (userStatus) {
+      case "creator":
+        return <span className="px-2 py-1 rounded-full text-xs font-medium bg-primary/20 text-primary">👑 Organizador</span>;
+      case "accepted":
+        return <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-600">✓ Aceito</span>;
+      case "pending":
+        return <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-600">⏳ Pendente</span>;
+      case "rejected":
+        return <span className="px-2 py-1 rounded-full text-xs font-medium bg-destructive/20 text-destructive">✗ Recusado</span>;
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="card-elevated p-4 hover:shadow-xl transition-all duration-300">
@@ -32,13 +49,22 @@ export const GameCard = ({ game, showJoinButton = true, onJoin, isParticipating 
           <h3 className="font-semibold text-foreground text-lg">{game.title}</h3>
           <p className="text-sm text-muted-foreground">por {game.creatorName}</p>
         </div>
-        <span className="px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
-          {game.sport}
-        </span>
+        <div className="flex flex-col items-end gap-1">
+          <span className="px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary capitalize">
+            {game.gameType}
+          </span>
+          {getStatusBadge()}
+        </div>
       </div>
 
       {/* Info */}
       <div className="space-y-2 mb-4">
+        {/* Classe */}
+        <div className="flex items-center gap-2 text-sm">
+          <span className="w-4 h-4 flex items-center justify-center text-primary font-bold">🎾</span>
+          <span className="text-foreground font-medium">{formatClassRange(game.classMin, game.classMax)}</span>
+        </div>
+        
         <div className="flex items-center gap-2 text-sm">
           <MapPin className="w-4 h-4 text-primary" />
           <span className="text-foreground">{game.location}</span>
@@ -56,9 +82,9 @@ export const GameCard = ({ game, showJoinButton = true, onJoin, isParticipating 
         <div className="flex items-center gap-2 text-sm">
           <Users className="w-4 h-4 text-primary" />
           <span className={`font-medium ${isFull ? 'text-destructive' : 'text-foreground'}`}>
-            {game.currentPlayers}/{game.maxPlayers} jogadores
+            {currentPlayers}/{maxPlayers} jogadores
             {!isFull && <span className="text-muted-foreground"> ({spotsLeft} vaga{spotsLeft > 1 ? 's' : ''})</span>}
-            {isFull && <span className="text-destructive"> (lotado)</span>}
+            {isFull && <span className="text-destructive"> (completo)</span>}
           </span>
         </div>
       </div>
@@ -81,19 +107,19 @@ export const GameCard = ({ game, showJoinButton = true, onJoin, isParticipating 
           <ChevronRight className="w-4 h-4" />
         </Button>
         
-        {showJoinButton && !isParticipating && !isFull && (
+        {showRequestButton && userStatus === "not_requested" && !isFull && (
           <Button
             variant="tennis"
             className="flex-1"
-            onClick={onJoin}
+            onClick={onRequestJoin}
           >
-            Participar
+            Solicitar entrada
           </Button>
         )}
         
-        {isParticipating && (
-          <span className="flex-1 flex items-center justify-center text-sm font-medium text-primary">
-            ✓ Você participa
+        {userStatus === "pending" && (
+          <span className="flex-1 flex items-center justify-center text-sm font-medium text-yellow-600">
+            ⏳ Aguardando aprovação
           </span>
         )}
       </div>
