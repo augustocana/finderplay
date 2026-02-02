@@ -2,9 +2,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SimpleUserProvider, useSimpleUser } from "./hooks/useSimpleUser";
-import { WelcomeScreen } from "./components/WelcomeScreen";
+import { IdentificationModal } from "./components/IdentificationModal";
 import HomePage from "./pages/HomePage";
 import GamesPage from "./pages/GamesPage";
 import GameDetailsPage from "./pages/GameDetailsPage";
@@ -13,9 +13,9 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// Componente que verifica se o usuário já se identificou
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, isLoading, isFirstAccess } = useSimpleUser();
+// Componente que só mostra loading enquanto verifica localStorage
+const LoadingWrapper = ({ children }: { children: React.ReactNode }) => {
+  const { isLoading } = useSimpleUser();
 
   if (isLoading) {
     return (
@@ -23,29 +23,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
         <div className="animate-pulse text-muted-foreground">Carregando...</div>
       </div>
     );
-  }
-
-  if (!user || isFirstAccess) {
-    return <Navigate to="/welcome" replace />;
-  }
-
-  return <>{children}</>;
-};
-
-// Componente que redireciona usuários já logados
-const PublicRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, isLoading, isFirstAccess } = useSimpleUser();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Carregando...</div>
-      </div>
-    );
-  }
-
-  if (user && !isFirstAccess) {
-    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
@@ -53,60 +30,27 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 
 const AppRoutes = () => {
   return (
-    <Routes>
-      {/* Welcome Screen - primeiro acesso */}
-      <Route
-        path="/welcome"
-        element={
-          <PublicRoute>
-            <WelcomeScreen />
-          </PublicRoute>
-        }
-      />
+    <>
+      <Routes>
+        {/* Home - página principal (sempre acessível) */}
+        <Route path="/" element={<HomePage />} />
 
-      {/* Home - página principal */}
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <HomePage />
-          </ProtectedRoute>
-        }
-      />
+        {/* Lista de jogos (sempre acessível) */}
+        <Route path="/games" element={<GamesPage />} />
 
-      {/* Lista de jogos */}
-      <Route
-        path="/games"
-        element={
-          <ProtectedRoute>
-            <GamesPage />
-          </ProtectedRoute>
-        }
-      />
+        {/* Detalhes do jogo (sempre acessível) */}
+        <Route path="/game/:gameId" element={<GameDetailsPage />} />
 
-      {/* Detalhes do jogo */}
-      <Route
-        path="/game/:gameId"
-        element={
-          <ProtectedRoute>
-            <GameDetailsPage />
-          </ProtectedRoute>
-        }
-      />
+        {/* Perfil (sempre acessível) */}
+        <Route path="/profile" element={<ProfilePage />} />
 
-      {/* Perfil */}
-      <Route
-        path="/profile"
-        element={
-          <ProtectedRoute>
-            <ProfilePage />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Catch-all */}
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+        {/* Catch-all */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      
+      {/* Modal de identificação global */}
+      <IdentificationModal />
+    </>
   );
 };
 
@@ -117,7 +61,9 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <AppRoutes />
+          <LoadingWrapper>
+            <AppRoutes />
+          </LoadingWrapper>
         </BrowserRouter>
       </TooltipProvider>
     </SimpleUserProvider>
