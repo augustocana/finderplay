@@ -5,41 +5,20 @@ import { useSimpleUser } from "./useSimpleUser";
 const GAMES_KEY = "tennis_games";
 const REQUESTS_KEY = "tennis_requests";
 
-// Dados mock iniciais
-const initialGames: Game[] = [
-  {
-    id: "game-1",
-    title: "Partida amistosa",
-    gameType: "duplas",
-    classMin: 3,
-    classMax: 5,
-    location: "Clube Pinheiros, São Paulo",
-    date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    time: "09:00",
-    description: "Procurando parceiros para duplas. Nível intermediário.",
-    creatorId: "demo-user-1",
-    creatorName: "Ricardo",
-    participants: ["demo-user-1"],
-    participantNames: { "demo-user-1": "Ricardo" },
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "game-2",
-    title: "Treino de simples",
-    gameType: "simples",
-    classMin: 2,
-    classMax: 4,
-    location: "Quadra Municipal, Moema",
-    date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    time: "14:00",
-    description: "Procuro adversário para treinar saque e devolução",
-    creatorId: "demo-user-2",
-    creatorName: "Ana",
-    participants: ["demo-user-2"],
-    participantNames: { "demo-user-2": "Ana" },
-    createdAt: new Date().toISOString(),
-  },
-];
+// Sem dados mock - apenas jogos reais criados pelos usuários
+const initialGames: Game[] = [];
+
+// Limpar dados antigos ao carregar (one-time cleanup)
+const CACHE_VERSION = "v2";
+const CACHE_VERSION_KEY = "tennis_cache_version";
+if (typeof window !== "undefined") {
+  const currentVersion = localStorage.getItem(CACHE_VERSION_KEY);
+  if (currentVersion !== CACHE_VERSION) {
+    localStorage.removeItem(GAMES_KEY);
+    localStorage.removeItem(REQUESTS_KEY);
+    localStorage.setItem(CACHE_VERSION_KEY, CACHE_VERSION);
+  }
+}
 
 export const useGames = () => {
   const { user } = useSimpleUser();
