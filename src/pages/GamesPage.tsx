@@ -1,97 +1,132 @@
-import { useState } from "react";
-import { PlusCircle, Search, Calendar, User, Bell } from "lucide-react";
+import { useState, useMemo } from "react";
+import { PlusCircle, Search, Calendar, User, Bell, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { GameCard } from "@/components/GameCard";
-import { CreateGameForm } from "@/components/CreateGameForm";
 import { BottomNavigation } from "@/components/BottomNavigation";
-import { useGames } from "@/hooks/useGames";
-import { useSimpleUser } from "@/hooks/useSimpleUser";
-import { toast } from "@/hooks/use-toast";
+import { GameFilters, GameFiltersState } from "@/components/GameFilters";
+import { GameInviteCardNew } from "@/components/GameInviteCardNew";
+import { CreateGameFormNew } from "@/components/CreateGameFormNew";
+import { useGameInvites } from "@/hooks/useGameInvites";
+import { useAuth } from "@/hooks/useAuth";
+import { format, parseISO, isEqual, startOfDay } from "date-fns";
 
-type TabType = "available" | "my-games" | "participating" | "pending";
+type TabType = "available" | "my-games";
+
+// Helper to check if a time slot falls within a period
+const isTimeInPeriod = (timeSlot: string, period: string): boolean => {
+  const hour = parseInt(timeSlot.split(":")[0], 10);
+  switch (period) {
+    case "morning": return hour >= 6 && hour < 12;
+    case "afternoon": return hour >= 12 && hour < 18;
+    case "evening": return hour >= 18 && hour <= 22;
+    default: return true;
+  }
+};
 
 export const GamesPage = () => {
-  const { user, requireIdentification, isIdentified } = useSimpleUser();
-  const { 
-    availableGames, 
-    myCreatedGames, 
-    myParticipatingGames, 
-    myPendingRequests,
-    getPendingRequestsForMyGames,
-    requestJoin, 
-    getUserGameStatus,
-    isLoading 
-  } = useGames();
+  const { profile, isAuthenticated, requireAuth } = useAuth();
+  const { games, myCreatedGames, isLoading, deleteGame } = useGameInvites();
+  
   const [activeTab, setActiveTab] = useState<TabType>("available");
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingGame, setEditingGame] = useState<any>(null);
+  const [filters, setFilters] = useState<GameFiltersState>({
+    skillLevel: "all",
+    gameType: "all",
+    date: undefined,
+    timeSlot: "all",
+  });
 
-  const pendingForMe = getPendingRequestsForMyGames();
-
-  const handleRequestJoin = (gameId: string) => {
-    requireIdentification(() => {
-      const success = requestJoin(gameId);
-      if (success) {
-        toast({
-          title: "Solicitação enviada! 🎾",
-          description: "Aguarde a aprovação do organizador.",
-        });
+  // Filter games based on selected filters
+  const filteredGames = useMemo(() => {
+    const sourceGames = activeTab === "my-games" ? myCreatedGames : games;
+    
+    return sourceGames.filter((game) => {
+      // Skill level filter
+      if (filters.skillLevel !== "all") {
+        const level = parseInt(filters.skillLevel, 10);
+        const min = game.level_range_min || game.desired_level;
+        const max = game.level_range_max || game.desired_level;
+        if (level < min || level > max) return false;
       }
+      
+      // Game type filter
+      if (filters.gameType !== "all" && game.game_type !== filters.gameType) {
+        return false;
+      }
+      
+      // Date filter
+      if (filters.date) {
+        const gameDate = startOfDay(parseISO(game.date));
+        const filterDate = startOfDay(filters.date);
+        if (!isEqual(gameDate, filterDate)) return false;
+      }
+      
+      // Time slot filter
+      if (filters.timeSlot !== "all" && !isTimeInPeriod(game.time_slot, filters.timeSlot)) {
+        return false;
+      }
+      
+      return true;
     });
-  };
+  }, [games, myCreatedGames, activeTab, filters]);
 
   const handleCreateGame = () => {
-    requireIdentification(() => {
+    requireAuth(() => {
+      setEditingGame(null);
       setShowCreateForm(true);
     });
   };
 
-  const tabs = [
-    { id: "available" as TabType, label: "Disponíveis", icon: Search, count: availableGames.length },
-    { id: "my-games" as TabType, label: "Meus jogos", icon: Calendar, count: myCreatedGames.length, badge: pendingForMe.length },
-    { id: "participating" as TabType, label: "Participando", icon: User, count: myParticipatingGames.length },
-    { id: "pending" as TabType, label: "Pendentes", icon: Bell, count: myPendingRequests.length },
-  ];
-
-  const getCurrentGames = () => {
-    switch (activeTab) {
-      case "available":
-        return availableGames;
-      case "my-games":
-        return myCreatedGames;
-      case "participating":
-        return myParticipatingGames;
-      default:
-        return [];
-    }
+  const handleEditGame = (game: any) => {
+    setEditingGame(game);
+    setShowCreateForm(true);
   };
 
-  const currentGames = getCurrentGames();
+  const tabs = [
+    { id: "available" as TabType, label: "Disponíveis", icon: Search, count: games.length },
+    { id: "my-games" as TabType, label: "Meus jogos", icon: Calendar, count: myCreatedGames.length },
+  ];
 
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <header className="sticky top-0 z-40 glass border-b border-border/50 px-6 py-4">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Tênis</h1>
-            {user?.name && (
-              <p className="text-sm text-muted-foreground">
-                Olá, {user.name}! 👋
+      <header className="sticky top-0 z-40 glass border-b border-border/50 px-4 sm:px-6 py-4">
+        <div className="flex items-center justify-between mb-4 gap-3">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate">Tênis</h1>
+            {profile?.name && (
+              <p className="text-sm text-muted-foreground truncate">
+                Olá, {profile.name}! 👋
               </p>
             )}
           </div>
-          <Button
-            variant="tennis"
-            size="sm"
-            onClick={handleCreateGame}
-          >
-            <PlusCircle className="w-4 h-4" />
-            Criar jogo
-          </Button>
+          
+          {isAuthenticated ? (
+            <Button
+              variant="tennis"
+              size="sm"
+              onClick={handleCreateGame}
+              className="shrink-0"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span className="hidden sm:inline">Criar jogo</span>
+              <span className="sm:hidden">Criar</span>
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => requireAuth()}
+              className="shrink-0"
+            >
+              <LogIn className="w-4 h-4" />
+              <span className="hidden sm:inline">Entrar</span>
+            </Button>
+          )}
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-6 px-6">
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:-mx-6 sm:px-6">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -99,7 +134,7 @@ export const GamesPage = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all duration-200 ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all duration-200 ${
                   isActive
                     ? "gradient-primary text-primary-foreground"
                     : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
@@ -112,100 +147,82 @@ export const GamesPage = () => {
                 }`}>
                   {tab.count}
                 </span>
-                {/* Badge para solicitações pendentes */}
-                {tab.badge && tab.badge > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
-                    {tab.badge}
-                  </span>
-                )}
               </button>
             );
           })}
         </div>
       </header>
 
+      {/* Filters */}
+      <div className="px-4 sm:px-6 py-4 border-b border-border/50">
+        <GameFilters filters={filters} onFiltersChange={setFilters} />
+      </div>
+
       {/* Content */}
-      <main className="p-6">
-        {isLoading ? (
+      <main className="p-4 sm:p-6">
+        {!isAuthenticated ? (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary flex items-center justify-center">
+              <LogIn className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-2">
+              Entre para ver jogos
+            </h3>
+            <p className="text-muted-foreground mb-4 max-w-sm mx-auto">
+              Crie uma conta rápida para encontrar parceiros e organizar partidas
+            </p>
+            <Button variant="tennis" onClick={() => requireAuth()}>
+              <LogIn className="w-4 h-4" />
+              Entrar agora
+            </Button>
+          </div>
+        ) : isLoading ? (
           <div className="flex items-center justify-center py-12">
             <p className="text-muted-foreground">Carregando jogos...</p>
           </div>
-        ) : activeTab === "pending" ? (
-          // Aba de solicitações pendentes
-          myPendingRequests.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary flex items-center justify-center">
-                <Bell className="w-8 h-8 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                Nenhuma solicitação pendente
-              </h3>
-              <p className="text-muted-foreground">
-                Suas solicitações de entrada aparecerão aqui
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {myPendingRequests.map((request) => (
-                <div key={request.id} className="card-elevated p-4">
-                  <p className="text-sm text-muted-foreground">
-                    Aguardando aprovação para:
-                  </p>
-                  <p className="font-medium text-foreground">
-                    Jogo ID: {request.gameId}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Solicitado em: {new Date(request.createdAt).toLocaleDateString("pt-BR")}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )
-        ) : currentGames.length === 0 ? (
+        ) : filteredGames.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary flex items-center justify-center">
               <Search className="w-8 h-8 text-muted-foreground" />
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-2">
-              {activeTab === "available" && "Nenhum jogo disponível"}
+              {activeTab === "available" && "Nenhum jogo encontrado"}
               {activeTab === "my-games" && "Você ainda não criou jogos"}
-              {activeTab === "participating" && "Você não está em nenhum jogo"}
             </h3>
             <p className="text-muted-foreground mb-4">
-              {activeTab === "available" && "Seja o primeiro a criar um jogo!"}
+              {activeTab === "available" && "Tente ajustar os filtros ou crie um jogo!"}
               {activeTab === "my-games" && "Crie um jogo e encontre parceiros"}
-              {activeTab === "participating" && "Participe de um jogo disponível"}
             </p>
-            {activeTab !== "available" && (
-              <Button
-                variant="tennis"
-                onClick={() => activeTab === "my-games" ? setShowCreateForm(true) : setActiveTab("available")}
-              >
-                {activeTab === "my-games" ? "Criar jogo" : "Ver jogos disponíveis"}
-              </Button>
-            )}
+            <Button variant="tennis" onClick={handleCreateGame}>
+              <PlusCircle className="w-4 h-4" />
+              Criar jogo
+            </Button>
           </div>
         ) : (
-          <div className="space-y-4">
-            {currentGames.map((game) => (
-              <GameCard
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredGames.map((game) => (
+              <GameInviteCardNew
                 key={game.id}
                 game={game}
-                showRequestButton={activeTab === "available"}
-                onRequestJoin={() => handleRequestJoin(game.id)}
-                userStatus={getUserGameStatus(game.id)}
+                onEdit={handleEditGame}
+                onDelete={deleteGame}
               />
             ))}
           </div>
         )}
       </main>
 
-      {/* Create Game Modal */}
+      {/* Create/Edit Game Modal */}
       {showCreateForm && (
-        <CreateGameForm
-          onClose={() => setShowCreateForm(false)}
+        <CreateGameFormNew
+          game={editingGame}
+          onClose={() => {
+            setShowCreateForm(false);
+            setEditingGame(null);
+          }}
           onSuccess={() => {
             setShowCreateForm(false);
+            setEditingGame(null);
             setActiveTab("my-games");
           }}
         />
