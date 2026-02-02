@@ -224,14 +224,21 @@ export const useGames = () => {
     return requests.filter(r => myGameIds.includes(r.gameId) && r.status === "pending");
   };
 
-  // Filtros
-  const availableGames = games.filter(game => {
-    const gameDate = new Date(game.date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const maxPlayers = getMaxPlayers(game.gameType);
-    return gameDate >= today && game.participants.length < maxPlayers;
-  });
+  // Filtros - apenas jogos futuros, ordenados por data/horário mais próximo
+  const availableGames = games
+    .filter(game => {
+      const gameDateTime = new Date(`${game.date}T${game.time}`);
+      const now = new Date();
+      const maxPlayers = getMaxPlayers(game.gameType);
+      // Apenas jogos futuros que ainda têm vagas
+      return gameDateTime > now && game.participants.length < maxPlayers;
+    })
+    .sort((a, b) => {
+      // Ordenar por data + horário mais próximo primeiro
+      const dateTimeA = new Date(`${a.date}T${a.time}`).getTime();
+      const dateTimeB = new Date(`${b.date}T${b.time}`).getTime();
+      return dateTimeA - dateTimeB;
+    });
 
   const myCreatedGames = user ? games.filter(game => game.creatorId === user.id) : [];
   
