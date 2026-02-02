@@ -1,13 +1,16 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Calendar, Clock, Users, MessageCircle, Check, X } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, Clock, Users, MessageCircle, Check, X, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GameChat } from "@/components/GameChat";
+import { DirectChatModal } from "@/components/DirectChatModal";
+import { CreatorInboxModal } from "@/components/CreatorInboxModal";
+import { RatingModal } from "@/components/RatingModal";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { useGames } from "@/hooks/useGames";
 import { useSimpleUser } from "@/hooks/useSimpleUser";
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
-import { getMaxPlayers, formatClassRange } from "@/types/game";
+import { getMaxPlayers, formatClassRange, isGamePast } from "@/types/game";
 
 const formatDate = (dateStr: string) => {
   const date = new Date(dateStr);
@@ -56,6 +59,7 @@ export const GameDetailsPage = () => {
   const maxPlayers = getMaxPlayers(game.gameType);
   const currentPlayers = game.participants.length;
   const isFull = currentPlayers >= maxPlayers;
+  const gamePast = isGamePast(game);
 
   const handleRequestJoin = () => {
     const success = requestJoin(game.id);
@@ -228,9 +232,39 @@ export const GameDetailsPage = () => {
           </div>
         )}
 
+        {/* Direct Chat with Creator (before approval) */}
+        {!isCreator && !isAccepted && (
+          <div className="card-elevated p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-foreground">Tem dúvidas?</p>
+                <p className="text-xs text-muted-foreground">Converse com o organizador</p>
+              </div>
+              <DirectChatModal 
+                gameId={game.id} 
+                creatorId={game.creatorId} 
+                creatorName={game.creatorName} 
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Creator Inbox */}
+        {isCreator && (
+          <div className="card-elevated p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-foreground">Caixa de entrada</p>
+                <p className="text-xs text-muted-foreground">Veja perguntas dos interessados</p>
+              </div>
+              <CreatorInboxModal gameId={game.id} />
+            </div>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex gap-3">
-          {userStatus === "not_requested" && !isFull && (
+          {userStatus === "not_requested" && !isFull && !gamePast && (
             <Button variant="tennis" className="flex-1" onClick={handleRequestJoin}>
               Solicitar entrada
             </Button>
@@ -266,6 +300,13 @@ export const GameDetailsPage = () => {
           )}
         </div>
 
+        {/* Game Status Badge */}
+        {gamePast && (
+          <div className="text-center py-2 bg-muted rounded-lg">
+            <p className="text-sm text-muted-foreground">🏆 Jogo finalizado</p>
+          </div>
+        )}
+
         {/* Chat */}
         {isAccepted && showChat && (
           <div className="card-elevated overflow-hidden">
@@ -273,8 +314,38 @@ export const GameDetailsPage = () => {
           </div>
         )}
 
+        {/* Ratings Section (after game ends, for participants) */}
+        {gamePast && isAccepted && (
+          <div className="card-elevated p-5">
+            <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Star className="w-5 h-5 text-yellow-400" />
+              Avaliar participantes
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Como foi jogar com os outros participantes?
+            </p>
+            <div className="space-y-2">
+              {game.participants
+                .filter(id => id !== user?.id)
+                .map(id => (
+                  <div key={id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
+                    <span className="font-medium text-foreground">
+                      {game.participantNames[id]}
+                      {id === game.creatorId && " 👑"}
+                    </span>
+                    <RatingModal
+                      gameId={game.id}
+                      ratedUserId={id}
+                      ratedUserName={game.participantNames[id]}
+                    />
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
         {/* Access Notice */}
-        {!isAccepted && (
+        {!isAccepted && !gamePast && (
           <div className="bg-secondary/50 rounded-xl p-4 text-center">
             <p className="text-sm text-muted-foreground">
               💬 Solicite entrada e aguarde aprovação do organizador para acessar o chat
