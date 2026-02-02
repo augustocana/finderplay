@@ -33,6 +33,7 @@ export type Database = {
           notes: string | null
           status: string
           time_slot: string
+          title: string | null
           updated_at: string | null
         }
         Insert: {
@@ -53,6 +54,7 @@ export type Database = {
           notes?: string | null
           status?: string
           time_slot: string
+          title?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -73,6 +75,7 @@ export type Database = {
           notes?: string | null
           status?: string
           time_slot?: string
+          title?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -238,7 +241,6 @@ export type Database = {
       profiles: {
         Row: {
           age: number | null
-          anonymous_user_id: string | null
           availability: Json | null
           avatar_url: string | null
           average_rating: number | null
@@ -257,13 +259,12 @@ export type Database = {
           skill_level: number
           tournaments: number | null
           updated_at: string | null
-          user_id: string | null
+          user_id: string
           win_rate: number | null
           years_playing: number | null
         }
         Insert: {
           age?: number | null
-          anonymous_user_id?: string | null
           availability?: Json | null
           avatar_url?: string | null
           average_rating?: number | null
@@ -282,13 +283,12 @@ export type Database = {
           skill_level?: number
           tournaments?: number | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id: string
           win_rate?: number | null
           years_playing?: number | null
         }
         Update: {
           age?: number | null
-          anonymous_user_id?: string | null
           availability?: Json | null
           avatar_url?: string | null
           average_rating?: number | null
@@ -307,7 +307,7 @@ export type Database = {
           skill_level?: number
           tournaments?: number | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
           win_rate?: number | null
           years_playing?: number | null
         }
@@ -328,6 +328,8 @@ export type Database = {
           level_range_min: number | null
           neighborhood: string | null
           status: string | null
+          time_slot: string | null
+          title: string | null
         }
         Insert: {
           city?: string | null
@@ -341,6 +343,8 @@ export type Database = {
           level_range_min?: number | null
           neighborhood?: string | null
           status?: string | null
+          time_slot?: string | null
+          title?: string | null
         }
         Update: {
           city?: string | null
@@ -354,6 +358,8 @@ export type Database = {
           level_range_min?: number | null
           neighborhood?: string | null
           status?: string | null
+          time_slot?: string | null
+          title?: string | null
         }
         Relationships: [
           {
@@ -404,8 +410,7 @@ export type Database = {
       }
     }
     Functions: {
-      get_anonymous_user_id: { Args: never; Returns: string }
-      get_current_profile_id: { Args: never; Returns: string }
+      get_current_user_profile_id: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never

@@ -1,50 +1,31 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Calendar, Clock, Users, MessageCircle, Check, X, Star } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, Clock, Users, MessageCircle, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { GameChat } from "@/components/GameChat";
-import { DirectChatModal } from "@/components/DirectChatModal";
-import { CreatorInboxModal } from "@/components/CreatorInboxModal";
-import { RatingModal } from "@/components/RatingModal";
 import { BottomNavigation } from "@/components/BottomNavigation";
-import { useGames } from "@/hooks/useGames";
-import { useSimpleUser } from "@/hooks/useSimpleUser";
-import { toast } from "@/hooks/use-toast";
-import { useState } from "react";
-import { getMaxPlayers, formatClassRange, isGamePast } from "@/types/game";
+import { useGameInvites } from "@/hooks/useGameInvites";
+import { useAuth } from "@/hooks/useAuth";
+import { format, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
-const formatDate = (dateStr: string) => {
-  const date = new Date(dateStr);
-  return new Intl.DateTimeFormat("pt-BR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(date);
+const formatClassRange = (min: number, max: number): string => {
+  if (min === max) return `${min}ª classe`;
+  return `${min}ª a ${max}ª classe`;
 };
 
 export const GameDetailsPage = () => {
   const { gameId } = useParams();
   const navigate = useNavigate();
-  const { user } = useSimpleUser();
-  const { 
-    getGameById, 
-    getRequestsForGame, 
-    requestJoin, 
-    acceptRequest, 
-    rejectRequest,
-    getUserGameStatus 
-  } = useGames();
-  const [showChat, setShowChat] = useState(false);
+  const { profile, isAuthenticated, requireAuth } = useAuth();
+  const { getGameById } = useGameInvites();
 
   const game = gameId ? getGameById(gameId) : null;
-  const gameRequests = gameId ? getRequestsForGame(gameId) : [];
-  const pendingRequests = gameRequests.filter(r => r.status === "pending");
 
   if (!game) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <div className="text-center">
           <h1 className="text-xl font-bold text-foreground mb-2">Jogo não encontrado</h1>
+          <p className="text-muted-foreground mb-4">Este jogo pode ter sido excluído.</p>
           <Button variant="tennis" onClick={() => navigate("/games")}>
             Voltar aos jogos
           </Button>
@@ -53,305 +34,141 @@ export const GameDetailsPage = () => {
     );
   }
 
-  const userStatus = getUserGameStatus(game.id);
-  const isCreator = userStatus === "creator";
-  const isAccepted = userStatus === "accepted" || isCreator;
-  const maxPlayers = getMaxPlayers(game.gameType);
-  const currentPlayers = game.participants.length;
-  const isFull = currentPlayers >= maxPlayers;
-  const gamePast = isGamePast(game);
+  const isCreator = profile?.id === game.creator_id;
+  const gameDate = parseISO(game.date);
+  const formattedDate = format(gameDate, "EEEE, dd 'de' MMMM", { locale: ptBR });
+  const classRange = formatClassRange(
+    game.level_range_min || game.desired_level,
+    game.level_range_max || game.desired_level
+  );
 
   const handleRequestJoin = () => {
-    const success = requestJoin(game.id);
-    if (success) {
-      toast({
-        title: "Solicitação enviada! 🎾",
-        description: "Aguarde a aprovação do organizador.",
-      });
-    }
-  };
-
-  const handleAccept = (requestId: string) => {
-    const success = acceptRequest(requestId);
-    if (success) {
-      toast({
-        title: "Jogador aceito! ✅",
-        description: "O jogador agora pode acessar o chat.",
-      });
-    }
-  };
-
-  const handleReject = (requestId: string) => {
-    const success = rejectRequest(requestId);
-    if (success) {
-      toast({
-        title: "Solicitação recusada",
-        description: "O jogador foi notificado.",
-      });
-    }
+    requireAuth(() => {
+      // TODO: Implementar solicitação de entrada
+      console.log("Solicitar entrada no jogo:", gameId);
+    });
   };
 
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <header className="sticky top-0 z-40 glass border-b border-border/50 px-6 py-4">
+      <header className="sticky top-0 z-40 glass border-b border-border/50 px-4 sm:px-6 py-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div className="flex-1">
-            <h1 className="text-xl font-bold text-foreground">{game.title}</h1>
-            <p className="text-sm text-muted-foreground">por {game.creatorName}</p>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">
+              {game.title || "Jogo de tênis"}
+            </h1>
+            <p className="text-sm text-muted-foreground truncate">
+              por {game.creator_name}
+            </p>
           </div>
-          <span className="px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary capitalize">
-            {game.gameType}
+          <span className="px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary capitalize shrink-0">
+            {game.game_type === "simples" ? "Simples" : "Duplas"}
           </span>
         </div>
       </header>
 
       {/* Content */}
-      <main className="p-6 space-y-6">
+      <main className="p-4 sm:p-6 space-y-6">
         {/* Info Card */}
         <div className="card-elevated p-5 space-y-4">
           {/* Classe */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
               <span className="text-lg">🎾</span>
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-sm text-muted-foreground">Nível aceito</p>
-              <p className="font-medium text-foreground">{formatClassRange(game.classMin, game.classMax)}</p>
+              <p className="font-medium text-foreground">{classRange}</p>
             </div>
           </div>
 
+          {/* Local */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
               <MapPin className="w-5 h-5 text-primary" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-sm text-muted-foreground">Local</p>
-              <p className="font-medium text-foreground">{game.location}</p>
+              <p className="font-medium text-foreground truncate">
+                {game.neighborhood}, {game.city}
+              </p>
+              {(isCreator || game.matched_player_id === profile?.id) && game.court_name && (
+                <p className="text-sm text-muted-foreground">{game.court_name}</p>
+              )}
             </div>
           </div>
 
+          {/* Data */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
               <Calendar className="w-5 h-5 text-primary" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Data</p>
-              <p className="font-medium text-foreground">{formatDate(game.date)}</p>
+              <p className="font-medium text-foreground capitalize">{formattedDate}</p>
             </div>
           </div>
 
+          {/* Horário */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
               <Clock className="w-5 h-5 text-primary" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Horário</p>
-              <p className="font-medium text-foreground">{game.time}</p>
+              <p className="font-medium text-foreground">{game.time_slot}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Users className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Jogadores</p>
-              <p className={`font-medium ${isFull ? 'text-destructive' : 'text-foreground'}`}>
-                {currentPlayers}/{maxPlayers} 
-                {isFull ? " (completo)" : ` (${maxPlayers - currentPlayers} vaga${maxPlayers - currentPlayers > 1 ? 's' : ''})`}
-              </p>
-            </div>
-          </div>
-
-          {/* Lista de participantes */}
-          {game.participants.length > 0 && (
+          {/* Observações */}
+          {game.notes && (
             <div className="pt-4 border-t border-border">
-              <p className="text-sm text-muted-foreground mb-2">Participantes:</p>
-              <div className="flex flex-wrap gap-2">
-                {game.participants.map(id => (
-                  <span key={id} className="px-3 py-1 bg-secondary rounded-full text-sm">
-                    {game.participantNames[id]}
-                    {id === game.creatorId && " 👑"}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {game.description && (
-            <div className="pt-4 border-t border-border">
-              <p className="text-sm text-muted-foreground mb-1">Descrição</p>
-              <p className="text-foreground">{game.description}</p>
+              <p className="text-sm text-muted-foreground mb-1">Observações</p>
+              <p className="text-foreground">{game.notes}</p>
             </div>
           )}
         </div>
-
-        {/* Pending Requests (only for creator) */}
-        {isCreator && pendingRequests.length > 0 && (
-          <div className="card-elevated p-5">
-            <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-yellow-500/20 text-yellow-600 flex items-center justify-center text-sm">
-                {pendingRequests.length}
-              </span>
-              Solicitações pendentes
-            </h3>
-            <div className="space-y-3">
-              {pendingRequests.map(request => (
-                <div key={request.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
-                  <div>
-                    <p className="font-medium text-foreground">{request.userName}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Solicitado em {new Date(request.createdAt).toLocaleDateString("pt-BR")}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-green-600 hover:bg-green-100"
-                      onClick={() => handleAccept(request.id)}
-                    >
-                      <Check className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                      onClick={() => handleReject(request.id)}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Direct Chat with Creator (before approval) */}
-        {!isCreator && !isAccepted && (
-          <div className="card-elevated p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-foreground">Tem dúvidas?</p>
-                <p className="text-xs text-muted-foreground">Converse com o organizador</p>
-              </div>
-              <DirectChatModal 
-                gameId={game.id} 
-                creatorId={game.creatorId} 
-                creatorName={game.creatorName} 
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Creator Inbox */}
-        {isCreator && (
-          <div className="card-elevated p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-foreground">Caixa de entrada</p>
-                <p className="text-xs text-muted-foreground">Veja perguntas dos interessados</p>
-              </div>
-              <CreatorInboxModal gameId={game.id} />
-            </div>
-          </div>
-        )}
 
         {/* Actions */}
-        <div className="flex gap-3">
-          {userStatus === "not_requested" && !isFull && !gamePast && (
-            <Button variant="tennis" className="flex-1" onClick={handleRequestJoin}>
-              Solicitar entrada
-            </Button>
-          )}
-
-          {userStatus === "pending" && (
-            <div className="flex-1 text-center py-3 bg-yellow-500/10 rounded-lg">
-              <p className="text-yellow-600 font-medium">⏳ Aguardando aprovação</p>
-            </div>
-          )}
-
-          {userStatus === "rejected" && (
-            <div className="flex-1 text-center py-3 bg-destructive/10 rounded-lg">
-              <p className="text-destructive font-medium">✗ Solicitação recusada</p>
-            </div>
-          )}
-
-          {isAccepted && (
-            <Button
-              variant={showChat ? "secondary" : "tennis"}
-              className="flex-1"
-              onClick={() => setShowChat(!showChat)}
-            >
-              <MessageCircle className="w-4 h-4" />
-              {showChat ? "Ocultar chat" : "Ver chat"}
-            </Button>
-          )}
-
-          {isCreator && (
-            <span className="flex items-center justify-center px-4 text-sm font-medium text-primary">
-              👑 Você é o organizador
-            </span>
-          )}
-        </div>
-
-        {/* Game Status Badge */}
-        {gamePast && (
-          <div className="text-center py-2 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground">🏆 Jogo finalizado</p>
-          </div>
-        )}
-
-        {/* Chat */}
-        {isAccepted && showChat && (
-          <div className="card-elevated overflow-hidden">
-            <GameChat gameId={game.id} />
-          </div>
-        )}
-
-        {/* Ratings Section (after game ends, for participants) */}
-        {gamePast && isAccepted && (
-          <div className="card-elevated p-5">
-            <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-              <Star className="w-5 h-5 text-yellow-400" />
-              Avaliar participantes
-            </h3>
+        {!isAuthenticated ? (
+          <div className="card-elevated p-5 text-center">
+            <LogIn className="w-8 h-8 mx-auto text-muted-foreground mb-3" />
+            <p className="text-foreground font-medium mb-2">Entre para participar</p>
             <p className="text-sm text-muted-foreground mb-4">
-              Como foi jogar com os outros participantes?
+              Faça login para solicitar entrada neste jogo
             </p>
-            <div className="space-y-2">
-              {game.participants
-                .filter(id => id !== user?.id)
-                .map(id => (
-                  <div key={id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-                    <span className="font-medium text-foreground">
-                      {game.participantNames[id]}
-                      {id === game.creatorId && " 👑"}
-                    </span>
-                    <RatingModal
-                      gameId={game.id}
-                      ratedUserId={id}
-                      ratedUserName={game.participantNames[id]}
-                    />
-                  </div>
-                ))}
-            </div>
+            <Button variant="tennis" onClick={() => requireAuth()}>
+              <LogIn className="w-4 h-4" />
+              Entrar agora
+            </Button>
           </div>
+        ) : isCreator ? (
+          <div className="card-elevated p-5">
+            <div className="flex items-center gap-2 text-primary mb-3">
+              <span className="text-lg">👑</span>
+              <span className="font-medium">Você é o organizador</span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Aguarde solicitações de entrada de outros jogadores.
+            </p>
+          </div>
+        ) : (
+          <Button variant="tennis" className="w-full" onClick={handleRequestJoin}>
+            <MessageCircle className="w-4 h-4" />
+            Solicitar entrada
+          </Button>
         )}
 
-        {/* Access Notice */}
-        {!isAccepted && !gamePast && (
-          <div className="bg-secondary/50 rounded-xl p-4 text-center">
-            <p className="text-sm text-muted-foreground">
-              💬 Solicite entrada e aguarde aprovação do organizador para acessar o chat
-            </p>
-          </div>
-        )}
+        {/* Info notice */}
+        <div className="bg-secondary/50 rounded-xl p-4 text-center">
+          <p className="text-sm text-muted-foreground">
+            💬 Após aprovação, você poderá ver detalhes completos e conversar com o organizador
+          </p>
+        </div>
       </main>
 
       <BottomNavigation />

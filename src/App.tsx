@@ -3,8 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { SimpleUserProvider, useSimpleUser } from "./hooks/useSimpleUser";
-import { IdentificationModal } from "./components/IdentificationModal";
+import { AuthProvider, useAuth } from "./hooks/useAuth";
+import { AuthModal } from "./components/AuthModal";
 import HomePage from "./pages/HomePage";
 import GamesPage from "./pages/GamesPage";
 import GameDetailsPage from "./pages/GameDetailsPage";
@@ -13,9 +13,9 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// Componente que só mostra loading enquanto verifica localStorage
+// Componente de loading enquanto verifica sessão
 const LoadingWrapper = ({ children }: { children: React.ReactNode }) => {
-  const { isLoading } = useSimpleUser();
+  const { isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -32,31 +32,31 @@ const AppRoutes = () => {
   return (
     <>
       <Routes>
-        {/* Home - página principal (sempre acessível) */}
+        {/* Home - página principal */}
         <Route path="/" element={<HomePage />} />
 
-        {/* Lista de jogos (sempre acessível) */}
+        {/* Lista de jogos */}
         <Route path="/games" element={<GamesPage />} />
 
-        {/* Detalhes do jogo (sempre acessível) */}
+        {/* Detalhes do jogo */}
         <Route path="/game/:gameId" element={<GameDetailsPage />} />
 
-        {/* Perfil (sempre acessível) */}
+        {/* Perfil */}
         <Route path="/profile" element={<ProfilePage />} />
 
         {/* Catch-all */}
         <Route path="*" element={<NotFound />} />
       </Routes>
       
-      {/* Modal de identificação global */}
-      <IdentificationModal />
+      {/* Modal de autenticação global */}
+      <AuthModal />
     </>
   );
 };
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <SimpleUserProvider>
+    <AuthProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -66,7 +66,7 @@ const App = () => (
           </LoadingWrapper>
         </BrowserRouter>
       </TooltipProvider>
-    </SimpleUserProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
