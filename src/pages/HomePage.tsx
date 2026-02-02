@@ -1,316 +1,220 @@
-import { Search, UserCheck, MessageCircle, ChevronRight, Calendar, ArrowRight, Sparkles } from "lucide-react";
+import { Search, UserCheck, MessageCircle, ArrowRight, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { GameCard } from "@/components/GameCard";
-import { BottomNavigation } from "@/components/BottomNavigation";
 import { Badge } from "@/components/ui/badge";
+import { BottomNavigation } from "@/components/BottomNavigation";
 import { useGames } from "@/hooks/useGames";
-import { useSimpleUser } from "@/hooks/useSimpleUser";
-import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/hero-tennis.jpg";
-
 import type { Game } from "@/types/game";
+import { formatClassRange, getMaxPlayers } from "@/types/game";
+import { MapPin, Calendar, Clock, Users } from "lucide-react";
 
-// Jogos de exemplo para mostrar como funciona
-const exampleGames: Game[] = [
-  {
-    id: "example-1",
-    title: "Jogo na quadra do parque",
-    creatorId: "example-user",
-    creatorName: "João",
-    gameType: "simples",
-    classMin: 3,
-    classMax: 4,
-    date: new Date(Date.now() + 86400000).toISOString().split('T')[0], // amanhã
-    time: "08:00",
-    location: "Quadra do Parque Ibirapuera",
-    description: "Procurando parceiro para treino matinal",
-    participants: [],
-    participantNames: {},
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "example-2",
-    title: "Duplas no clube",
-    creatorId: "example-user-2",
-    creatorName: "Maria",
-    gameType: "duplas",
-    classMin: 4,
-    classMax: 5,
-    date: new Date(Date.now() + 172800000).toISOString().split('T')[0], // depois de amanhã
-    time: "18:30",
-    location: "Clube Atlético Paulistano",
-    description: "Precisamos de mais 2 para completar a dupla",
-    participants: ["p1"],
-    participantNames: { p1: "Carlos" },
-    createdAt: new Date().toISOString(),
-  },
-];
+// Um único jogo de exemplo
+const exampleGame: Game = {
+  id: "example-1",
+  title: "Simples no Ibirapuera",
+  creatorId: "example-user",
+  creatorName: "João Silva",
+  gameType: "simples",
+  classMin: 3,
+  classMax: 4,
+  date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+  time: "08:00",
+  location: "Quadra 2 - Parque Ibirapuera",
+  description: "Procurando parceiro para treino matinal",
+  participants: [],
+  participantNames: {},
+  createdAt: new Date().toISOString(),
+};
+
+const formatDate = (dateStr: string) => {
+  const date = new Date(dateStr);
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  if (date.toDateString() === today.toDateString()) return "Hoje";
+  if (date.toDateString() === tomorrow.toDateString()) return "Amanhã";
+  
+  return new Intl.DateTimeFormat("pt-BR", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  }).format(date);
+};
 
 export const HomePage = () => {
   const navigate = useNavigate();
-  const { user, requireIdentification } = useSimpleUser();
-  const { 
-    availableGames, 
-    requestJoin, 
-    getUserGameStatus,
-    isLoading 
-  } = useGames();
+  const { availableGames } = useGames();
 
-  const handleRequestJoin = (gameId: string) => {
-    requireIdentification(() => {
-      const success = requestJoin(gameId);
-      if (success) {
-        toast({
-          title: "Solicitação enviada! 🎾",
-          description: "Aguarde a aprovação do organizador.",
-        });
-      }
-    });
-  };
-
-  // Mostrar no máximo 3 jogos reais na home
-  const featuredGames = availableGames.slice(0, 3);
-  const hasRealGames = featuredGames.length > 0;
+  const maxPlayers = getMaxPlayers(exampleGame.gameType);
+  const currentPlayers = exampleGame.participants.length;
+  const spotsLeft = maxPlayers - currentPlayers;
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Hero Section com melhor contraste */}
-      <section className="relative overflow-hidden">
-        {/* Background Image with Strong Overlay for readability */}
+      {/* Hero Section - Primeira dobra limpa */}
+      <section className="relative min-h-[60vh] flex flex-col justify-center overflow-hidden">
+        {/* Background Image */}
         <div className="absolute inset-0 z-0">
           <img 
             src={heroImage} 
             alt="Tênis" 
             className="w-full h-full object-cover"
           />
-          {/* Overlay mais forte para garantir legibilidade */}
-          <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/85 to-background" />
+          {/* Overlay forte para garantir legibilidade em qualquer tela */}
+          <div className="absolute inset-0 bg-black/70" />
         </div>
 
-        {/* Content */}
-        <div className="relative z-10 px-6 pt-12 pb-16">
-          {/* Welcome Badge - só mostra se identificado */}
-          {user?.name && (
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-6 animate-fade-in">
-              <span className="text-sm text-primary font-medium">👋 Olá, {user.name}!</span>
-            </div>
-          )}
-
-          {/* Title - com sombra de texto para legibilidade */}
-          <h1 className="text-3xl sm:text-4xl font-bold text-foreground leading-tight mb-4 animate-fade-in-up drop-shadow-sm">
-            Encontre jogos de tênis{" "}
-            <span className="text-gradient-primary">perto de você</span>
+        {/* Content - apenas frase + botão */}
+        <div className="relative z-10 px-6 py-12 text-center">
+          <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4 drop-shadow-lg">
+            Encontre jogos de tênis<br />
+            <span className="text-primary">perto de você</span>
           </h1>
 
-          {/* Subtitle */}
-          <p className="text-lg text-muted-foreground mb-8 max-w-md animate-fade-in-up drop-shadow-sm" style={{ animationDelay: "0.1s" }}>
-            Veja partidas próximas, peça para entrar e combine tudo pelo chat
+          <p className="text-lg text-white/90 mb-8 max-w-sm mx-auto drop-shadow-md">
+            Veja partidas próximas e peça para entrar
           </p>
 
-          {/* CTA Button */}
           <Button 
             variant="tennis" 
             size="lg"
             onClick={() => navigate("/games")}
-            className="animate-fade-in-up shadow-glow"
-            style={{ animationDelay: "0.2s" }}
+            className="shadow-xl"
           >
             <Search className="w-5 h-5" />
-            Encontrar jogos
+            Ver jogos na minha região
             <ArrowRight className="w-5 h-5" />
           </Button>
+
+          {availableGames.length > 0 && (
+            <p className="text-sm text-white/70 mt-4">
+              {availableGames.length} jogo{availableGames.length > 1 ? 's' : ''} disponível{availableGames.length > 1 ? 'is' : ''} agora
+            </p>
+          )}
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section className="px-6 py-10">
-        <h2 className="text-xl font-bold text-foreground mb-6 text-center">
+      {/* Como funciona - 3 passos visuais */}
+      <section className="px-6 py-10 bg-background">
+        <h2 className="text-lg font-bold text-foreground mb-6 text-center">
           Como funciona
         </h2>
 
-        <div className="grid gap-4">
-          {/* Step 1 */}
-          <div className="flex items-start gap-4 p-4 rounded-2xl bg-card border border-border">
-            <div className="flex-shrink-0 w-12 h-12 rounded-xl gradient-primary flex items-center justify-center shadow-md">
-              <Search className="w-6 h-6 text-primary-foreground" />
+        <div className="grid gap-3">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border">
+            <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center flex-shrink-0">
+              <Search className="w-5 h-5 text-primary-foreground" />
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">1</span>
-                <h3 className="font-semibold text-foreground">Encontre jogos</h3>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Jogos de tênis próximos, ordenados por data
-              </p>
+            <div>
+              <span className="text-xs font-bold text-primary">1.</span>
+              <span className="text-sm font-medium text-foreground ml-1">Encontre jogos próximos</span>
             </div>
           </div>
 
-          {/* Step 2 */}
-          <div className="flex items-start gap-4 p-4 rounded-2xl bg-card border border-border">
-            <div className="flex-shrink-0 w-12 h-12 rounded-xl gradient-primary flex items-center justify-center shadow-md">
-              <UserCheck className="w-6 h-6 text-primary-foreground" />
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border">
+            <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center flex-shrink-0">
+              <UserCheck className="w-5 h-5 text-primary-foreground" />
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">2</span>
-                <h3 className="font-semibold text-foreground">Peça para entrar</h3>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                O organizador aprova os participantes
-              </p>
+            <div>
+              <span className="text-xs font-bold text-primary">2.</span>
+              <span className="text-sm font-medium text-foreground ml-1">Peça para entrar</span>
             </div>
           </div>
 
-          {/* Step 3 */}
-          <div className="flex items-start gap-4 p-4 rounded-2xl bg-card border border-border">
-            <div className="flex-shrink-0 w-12 h-12 rounded-xl gradient-primary flex items-center justify-center shadow-md">
-              <MessageCircle className="w-6 h-6 text-primary-foreground" />
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border">
+            <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center flex-shrink-0">
+              <MessageCircle className="w-5 h-5 text-primary-foreground" />
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">3</span>
-                <h3 className="font-semibold text-foreground">Jogue e converse</h3>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Chat direto com o criador e chat do jogo
-              </p>
+            <div>
+              <span className="text-xs font-bold text-primary">3.</span>
+              <span className="text-sm font-medium text-foreground ml-1">Combine pelo chat e jogue</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Example Games Section - sempre mostra para explicar o produto */}
+      {/* Exemplo de jogo - UM ÚNICO, discreto */}
       <section className="px-6 py-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" />
-            <h2 className="text-xl font-bold text-foreground">
-              Exemplos de jogos
-            </h2>
-          </div>
-          <Badge variant="secondary" className="bg-secondary/80 text-muted-foreground">
-            Ilustrativo
+        {/* Card de exemplo com estilo diferenciado */}
+        <div className="relative bg-muted/50 rounded-2xl border border-dashed border-border p-4 opacity-80">
+          {/* Badge de exemplo */}
+          <Badge className="absolute -top-2 left-4 bg-muted text-muted-foreground text-xs border border-border">
+            Exemplo
           </Badge>
-        </div>
 
-        {/* Aviso de exemplo */}
-        <div className="mb-4 p-3 rounded-xl bg-muted/50 border border-border">
-          <p className="text-sm text-muted-foreground text-center">
-            ✨ Veja como os jogos aparecem — encontre os reais na sua região abaixo
-          </p>
-        </div>
-
-        <div className="space-y-4">
-          {exampleGames.map((game) => (
-            <div key={game.id} className="relative">
-              {/* Badge de exemplo no card */}
-              <div className="absolute -top-2 -right-2 z-10">
-                <Badge className="bg-muted text-muted-foreground text-xs">
-                  Exemplo
-                </Badge>
-              </div>
-              <div className="opacity-75 pointer-events-none">
-                <GameCard
-                  game={game}
-                  showRequestButton={false}
-                  userStatus="not_requested"
-                />
-              </div>
+          {/* Header do card */}
+          <div className="flex items-center justify-between mt-2 mb-3">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-secondary text-secondary-foreground">
+              <Users className="w-3 h-3" />
+              {exampleGame.gameType === "simples" ? "Simples" : "Duplas"}
             </div>
-          ))}
-        </div>
-      </section>
+          </div>
 
-      {/* CTA para jogos reais */}
-      <section className="px-6 py-6">
-        <div className="text-center p-6 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20">
-          <h3 className="text-lg font-bold text-foreground mb-2">
-            Pronto para jogar?
+          {/* Title */}
+          <h3 className="font-bold text-foreground text-base mb-1">
+            {exampleGame.title}
           </h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Veja jogos reais criados por jogadores na sua região
+          <p className="text-xs text-muted-foreground mb-3">
+            por {exampleGame.creatorName}
           </p>
-          <Button 
-            variant="tennis" 
-            size="lg"
+
+          {/* Class */}
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-secondary/80 mb-3">
+            <span className="text-sm">🎾</span>
+            <span className="text-xs font-medium text-foreground">
+              {formatClassRange(exampleGame.classMin, exampleGame.classMax)}
+            </span>
+          </div>
+
+          {/* Date, Time, Location */}
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-secondary/50">
+              <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+              <span className="text-xs text-foreground">{formatDate(exampleGame.date)}</span>
+            </div>
+            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-secondary/50">
+              <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+              <span className="text-xs text-foreground">{exampleGame.time}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 mb-3">
+            <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">{exampleGame.location}</span>
+          </div>
+
+          {/* Vagas */}
+          <div className="flex items-center gap-2 mb-4">
+            <Users className="w-3.5 h-3.5 text-muted-foreground" />
+            <div className="flex items-center gap-2">
+              <div className="flex -space-x-1">
+                {Array.from({ length: currentPlayers }).map((_, i) => (
+                  <div key={i} className="w-5 h-5 rounded-full bg-primary/20 border-2 border-muted flex items-center justify-center">
+                    <span className="text-[10px]">🎾</span>
+                  </div>
+                ))}
+                {Array.from({ length: spotsLeft }).map((_, i) => (
+                  <div key={i} className="w-5 h-5 rounded-full bg-secondary border-2 border-dashed border-muted" />
+                ))}
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {spotsLeft} vaga{spotsLeft > 1 ? 's' : ''}
+              </span>
+            </div>
+          </div>
+
+          {/* Botão sem ação real */}
+          <Button
+            variant="secondary"
+            size="sm"
+            className="w-full"
             onClick={() => navigate("/games")}
-            className="shadow-glow"
           >
-            <Search className="w-5 h-5" />
-            Ver jogos reais perto de mim
-            <ArrowRight className="w-5 h-5" />
+            <Eye className="w-4 h-4" />
+            Ver jogos reais
           </Button>
-        </div>
-      </section>
-
-      {/* Real Featured Games Section - só mostra se houver jogos reais */}
-      {hasRealGames && (
-        <section className="px-6 py-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-foreground">
-              🔥 Próximos jogos reais
-            </h2>
-            {availableGames.length > 3 && (
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => navigate("/games")}
-                className="text-primary"
-              >
-                Ver todos
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            )}
-          </div>
-
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <p className="text-muted-foreground">Carregando jogos...</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {featuredGames.map((game) => (
-                <GameCard
-                  key={game.id}
-                  game={game}
-                  showRequestButton={true}
-                  onRequestJoin={() => handleRequestJoin(game.id)}
-                  userStatus={getUserGameStatus(game.id)}
-                />
-              ))}
-
-              {/* Ver mais button */}
-              {availableGames.length > 3 && (
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => navigate("/games")}
-                >
-                  Ver todos os {availableGames.length} jogos
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* Quick Stats */}
-      <section className="px-6 py-6 mb-4">
-        <div className="grid grid-cols-3 gap-3">
-          <div className="text-center p-4 rounded-2xl bg-card border border-border">
-            <div className="text-2xl font-bold text-primary mb-1">{availableGames.length}</div>
-            <div className="text-xs text-muted-foreground">Jogos ativos</div>
-          </div>
-          <div className="text-center p-4 rounded-2xl bg-card border border-border">
-            <div className="text-2xl font-bold text-primary mb-1">🎾</div>
-            <div className="text-xs text-muted-foreground">Tênis</div>
-          </div>
-          <div className="text-center p-4 rounded-2xl bg-card border border-border">
-            <div className="text-2xl font-bold text-primary mb-1">⚡</div>
-            <div className="text-xs text-muted-foreground">Rápido</div>
-          </div>
         </div>
       </section>
 
