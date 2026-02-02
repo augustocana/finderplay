@@ -69,12 +69,12 @@ export const HomePage = () => {
         {/* Content - apenas frase + botão */}
         <div className="relative z-10 px-6 py-12 text-center">
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4 drop-shadow-lg">
-            Encontre jogos de tênis<br />
-            <span className="text-primary">perto de você</span>
+            Jogue mais tênis,<br />
+            <span className="text-primary">com menos esforço</span>
           </h1>
 
           <p className="text-lg text-white/90 mb-8 max-w-sm mx-auto drop-shadow-md">
-            Veja partidas próximas e peça para entrar
+            Encontre parceiros do seu nível e combine partidas sem burocracia.
           </p>
 
           <Button 
