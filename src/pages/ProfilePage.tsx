@@ -1,22 +1,35 @@
-import { ArrowLeft, User, LogOut } from "lucide-react";
+import { ArrowLeft, User, LogOut, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BottomNavigation } from "@/components/BottomNavigation";
+import { PlayerRatings } from "@/components/PlayerRatings";
 import { useSimpleUser } from "@/hooks/useSimpleUser";
 import { useGames } from "@/hooks/useGames";
+import { useRatings } from "@/hooks/useRatings";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
+import { isGamePast } from "@/types/game";
 
 const USER_KEY = "play_finder_user";
 const GAMES_KEY = "play_finder_games";
 const MESSAGES_KEY = "play_finder_messages";
+const DM_KEY = "play_finder_direct_messages";
+const RATINGS_KEY = "play_finder_ratings";
 
 export const ProfilePage = () => {
   const navigate = useNavigate();
   const { user, setUserName } = useSimpleUser();
-  const { myCreatedGames, myParticipatingGames } = useGames();
+  const { myCreatedGames, myParticipatingGames, games } = useGames();
+  const { getAverageRating, getGamesToRate } = useRatings();
   const [isEditing, setIsEditing] = useState(false);
   const [newName, setNewName] = useState(user?.name || "");
+
+  // Jogos finalizados do usuário
+  const pastGames = user ? [...myCreatedGames, ...myParticipatingGames]
+    .filter(game => isGamePast(game))
+    .slice(0, 5) : [];
+
+  const averageRating = user ? getAverageRating(user.id) : null;
 
   const handleSaveName = () => {
     if (newName.trim().length < 2) {
@@ -49,6 +62,8 @@ export const ProfilePage = () => {
       localStorage.removeItem(USER_KEY);
       localStorage.removeItem(GAMES_KEY);
       localStorage.removeItem(MESSAGES_KEY);
+      localStorage.removeItem(DM_KEY);
+      localStorage.removeItem(RATINGS_KEY);
       navigate("/");
       window.location.reload();
     }
@@ -106,17 +121,63 @@ export const ProfilePage = () => {
         {/* Estatísticas */}
         <div className="card-elevated p-5">
           <h3 className="font-semibold text-foreground mb-4">Suas estatísticas</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-4 bg-secondary/50 rounded-xl">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="text-center p-3 bg-secondary/50 rounded-xl">
               <p className="text-2xl font-bold text-primary">{myCreatedGames.length}</p>
-              <p className="text-sm text-muted-foreground">Jogos criados</p>
+              <p className="text-xs text-muted-foreground">Criados</p>
             </div>
-            <div className="text-center p-4 bg-secondary/50 rounded-xl">
+            <div className="text-center p-3 bg-secondary/50 rounded-xl">
               <p className="text-2xl font-bold text-primary">{myParticipatingGames.length}</p>
-              <p className="text-sm text-muted-foreground">Participações</p>
+              <p className="text-xs text-muted-foreground">Participações</p>
+            </div>
+            <div className="text-center p-3 bg-secondary/50 rounded-xl">
+              <div className="flex items-center justify-center gap-1">
+                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                <span className="text-2xl font-bold text-primary">
+                  {averageRating ? averageRating.average.toFixed(1) : "-"}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">Avaliação</p>
             </div>
           </div>
         </div>
+
+        {/* Avaliações recebidas */}
+        {user && (
+          <div className="card-elevated p-5">
+            <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Star className="w-5 h-5 text-yellow-400" />
+              Suas avaliações
+            </h3>
+            <PlayerRatings userId={user.id} showRecent={true} limit={5} />
+          </div>
+        )}
+
+        {/* Últimos jogos */}
+        {pastGames.length > 0 && (
+          <div className="card-elevated p-5">
+            <h3 className="font-semibold text-foreground mb-4">Últimos jogos</h3>
+            <div className="space-y-2">
+              {pastGames.map(game => (
+                <div 
+                  key={game.id} 
+                  className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg cursor-pointer hover:bg-secondary transition-colors"
+                  onClick={() => navigate(`/game/${game.id}`)}
+                >
+                  <div>
+                    <p className="font-medium text-foreground text-sm">{game.title}</p>
+                    <p className="text-xs text-muted-foreground capitalize">
+                      {game.gameType} • {new Date(game.date).toLocaleDateString("pt-BR")}
+                    </p>
+                  </div>
+                  <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full">
+                    {game.creatorId === user?.id ? "Organizador" : "Participante"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ID do usuário */}
         <div className="card-elevated p-5">
