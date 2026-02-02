@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SimpleUserProvider, useSimpleUser } from "./hooks/useSimpleUser";
 import { WelcomeScreen } from "./components/WelcomeScreen";
+import HomePage from "./pages/HomePage";
 import GamesPage from "./pages/GamesPage";
 import GameDetailsPage from "./pages/GameDetailsPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -25,7 +26,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!user || isFirstAccess) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/welcome" replace />;
   }
 
   return <>{children}</>;
@@ -44,7 +45,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (user && !isFirstAccess) {
-    return <Navigate to="/games" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
@@ -53,9 +54,9 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* Página inicial - Welcome */}
+      {/* Welcome Screen - primeiro acesso */}
       <Route
-        path="/"
+        path="/welcome"
         element={
           <PublicRoute>
             <WelcomeScreen />
@@ -63,7 +64,17 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Páginas protegidas */}
+      {/* Home - página principal */}
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <HomePage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Lista de jogos */}
       <Route
         path="/games"
         element={
@@ -72,6 +83,8 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+
+      {/* Detalhes do jogo */}
       <Route
         path="/game/:gameId"
         element={
@@ -80,6 +93,8 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+
+      {/* Perfil */}
       <Route
         path="/profile"
         element={

@@ -23,7 +23,7 @@ export const WelcomeScreen = () => {
     }
 
     setUserName(name.trim());
-    navigate("/games");
+    navigate("/");
   };
 
   return (
