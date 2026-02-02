@@ -22,6 +22,12 @@ function generateUUID(): string {
   });
 }
 
+// Validate UUID format to prevent spoofing with invalid IDs
+function isValidUUID(id: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(id);
+}
+
 export const AnonymousUserProvider = ({ children }: { children: ReactNode }) => {
   const [anonymousUserId, setAnonymousUserId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
@@ -29,6 +35,14 @@ export const AnonymousUserProvider = ({ children }: { children: ReactNode }) => 
   useEffect(() => {
     // Check if we already have an anonymous user ID in localStorage
     let storedId = localStorage.getItem(ANONYMOUS_USER_KEY);
+    
+    // Validate stored ID format - if invalid, regenerate
+    if (storedId && !isValidUUID(storedId)) {
+      if (import.meta.env.DEV) {
+        console.warn("Invalid anonymous_user_id format detected, regenerating");
+      }
+      storedId = null;
+    }
     
     if (!storedId) {
       // Generate a new anonymous user ID

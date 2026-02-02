@@ -128,6 +128,39 @@ export const useAnonymousProfile = () => {
   const updateProfile = async (profileData: Partial<AnonymousProfile>) => {
     if (!anonymousUserId || !profile) return { error: new Error("No profile to update") };
 
+    // Create a partial schema for validation based on fields being updated
+    const fieldsToValidate: Record<string, unknown> = {};
+    
+    // Only validate fields that are actually being updated
+    if (profileData.name !== undefined) {
+      if (!profileData.name.trim() || profileData.name.length > 100) {
+        return { error: new Error("Nome deve ter entre 1 e 100 caracteres") };
+      }
+      fieldsToValidate.name = profileData.name.trim();
+    }
+    if (profileData.city !== undefined) {
+      if (!profileData.city.trim() || profileData.city.length > 100) {
+        return { error: new Error("Cidade deve ter entre 1 e 100 caracteres") };
+      }
+      fieldsToValidate.city = profileData.city.trim();
+    }
+    if (profileData.neighborhood !== undefined) {
+      if (!profileData.neighborhood.trim() || profileData.neighborhood.length > 100) {
+        return { error: new Error("Bairro deve ter entre 1 e 100 caracteres") };
+      }
+      fieldsToValidate.neighborhood = profileData.neighborhood.trim();
+    }
+    if (profileData.years_playing !== undefined && profileData.years_playing !== null) {
+      if (profileData.years_playing < 0 || profileData.years_playing > 100) {
+        return { error: new Error("Anos de prática deve ser entre 0 e 100") };
+      }
+    }
+    if (profileData.skill_level !== undefined) {
+      if (profileData.skill_level < 1 || profileData.skill_level > 5) {
+        return { error: new Error("Nível deve ser entre 1 e 5") };
+      }
+    }
+
     // Get fresh client to ensure header is current
     const client = getSupabaseClient();
 
