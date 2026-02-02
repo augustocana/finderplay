@@ -1,17 +1,55 @@
-import { useState } from "react";
-import { Search, UserCheck, MessageCircle, ChevronRight, Users, Calendar, MapPin, ArrowRight } from "lucide-react";
+import { Search, UserCheck, MessageCircle, ChevronRight, Calendar, ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GameCard } from "@/components/GameCard";
 import { BottomNavigation } from "@/components/BottomNavigation";
+import { Badge } from "@/components/ui/badge";
 import { useGames } from "@/hooks/useGames";
 import { useSimpleUser } from "@/hooks/useSimpleUser";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/hero-tennis.jpg";
 
+import type { Game } from "@/types/game";
+
+// Jogos de exemplo para mostrar como funciona
+const exampleGames: Game[] = [
+  {
+    id: "example-1",
+    title: "Jogo na quadra do parque",
+    creatorId: "example-user",
+    creatorName: "João",
+    gameType: "simples",
+    classMin: 3,
+    classMax: 4,
+    date: new Date(Date.now() + 86400000).toISOString().split('T')[0], // amanhã
+    time: "08:00",
+    location: "Quadra do Parque Ibirapuera",
+    description: "Procurando parceiro para treino matinal",
+    participants: [],
+    participantNames: {},
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "example-2",
+    title: "Duplas no clube",
+    creatorId: "example-user-2",
+    creatorName: "Maria",
+    gameType: "duplas",
+    classMin: 4,
+    classMax: 5,
+    date: new Date(Date.now() + 172800000).toISOString().split('T')[0], // depois de amanhã
+    time: "18:30",
+    location: "Clube Atlético Paulistano",
+    description: "Precisamos de mais 2 para completar a dupla",
+    participants: ["p1"],
+    participantNames: { p1: "Carlos" },
+    createdAt: new Date().toISOString(),
+  },
+];
+
 export const HomePage = () => {
   const navigate = useNavigate();
-  const { user } = useSimpleUser();
+  const { user, requireIdentification } = useSimpleUser();
   const { 
     availableGames, 
     requestJoin, 
@@ -20,49 +58,53 @@ export const HomePage = () => {
   } = useGames();
 
   const handleRequestJoin = (gameId: string) => {
-    const success = requestJoin(gameId);
-    if (success) {
-      toast({
-        title: "Solicitação enviada! 🎾",
-        description: "Aguarde a aprovação do organizador.",
-      });
-    }
+    requireIdentification(() => {
+      const success = requestJoin(gameId);
+      if (success) {
+        toast({
+          title: "Solicitação enviada! 🎾",
+          description: "Aguarde a aprovação do organizador.",
+        });
+      }
+    });
   };
 
-  // Mostrar no máximo 3 jogos na home
+  // Mostrar no máximo 3 jogos reais na home
   const featuredGames = availableGames.slice(0, 3);
+  const hasRealGames = featuredGames.length > 0;
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Hero Section */}
+      {/* Hero Section com melhor contraste */}
       <section className="relative overflow-hidden">
-        {/* Background Image with Overlay */}
+        {/* Background Image with Strong Overlay for readability */}
         <div className="absolute inset-0 z-0">
           <img 
             src={heroImage} 
             alt="Tênis" 
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
+          {/* Overlay mais forte para garantir legibilidade */}
+          <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/85 to-background" />
         </div>
 
         {/* Content */}
         <div className="relative z-10 px-6 pt-12 pb-16">
-          {/* Welcome Badge */}
-          {user && (
+          {/* Welcome Badge - só mostra se identificado */}
+          {user?.name && (
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-6 animate-fade-in">
               <span className="text-sm text-primary font-medium">👋 Olá, {user.name}!</span>
             </div>
           )}
 
-          {/* Title */}
-          <h1 className="text-3xl sm:text-4xl font-bold text-foreground leading-tight mb-4 animate-fade-in-up">
+          {/* Title - com sombra de texto para legibilidade */}
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground leading-tight mb-4 animate-fade-in-up drop-shadow-sm">
             Encontre jogos de tênis{" "}
             <span className="text-gradient-primary">perto de você</span>
           </h1>
 
           {/* Subtitle */}
-          <p className="text-lg text-muted-foreground mb-8 max-w-md animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
+          <p className="text-lg text-muted-foreground mb-8 max-w-md animate-fade-in-up drop-shadow-sm" style={{ animationDelay: "0.1s" }}>
             Veja partidas próximas, peça para entrar e combine tudo pelo chat
           </p>
 
@@ -138,73 +180,121 @@ export const HomePage = () => {
         </div>
       </section>
 
-      {/* Featured Games Section */}
+      {/* Example Games Section - sempre mostra para explicar o produto */}
       <section className="px-6 py-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-foreground">
-            Próximos jogos
-          </h2>
-          {availableGames.length > 3 && (
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => navigate("/games")}
-              className="text-primary"
-            >
-              Ver todos
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-primary" />
+            <h2 className="text-xl font-bold text-foreground">
+              Exemplos de jogos
+            </h2>
+          </div>
+          <Badge variant="secondary" className="bg-secondary/80 text-muted-foreground">
+            Ilustrativo
+          </Badge>
         </div>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <p className="text-muted-foreground">Carregando jogos...</p>
-          </div>
-        ) : featuredGames.length === 0 ? (
-          <div className="text-center py-10 px-4 rounded-2xl bg-secondary/50 border border-border">
-            <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-              <Calendar className="w-7 h-7 text-primary" />
-            </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              Nenhum jogo disponível
-            </h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Seja o primeiro a criar um jogo!
-            </p>
-            <Button
-              variant="tennis"
-              onClick={() => navigate("/games")}
-            >
-              Criar jogo
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {featuredGames.map((game) => (
-              <GameCard
-                key={game.id}
-                game={game}
-                showRequestButton={true}
-                onRequestJoin={() => handleRequestJoin(game.id)}
-                userStatus={getUserGameStatus(game.id)}
-              />
-            ))}
+        {/* Aviso de exemplo */}
+        <div className="mb-4 p-3 rounded-xl bg-muted/50 border border-border">
+          <p className="text-sm text-muted-foreground text-center">
+            ✨ Veja como os jogos aparecem — encontre os reais na sua região abaixo
+          </p>
+        </div>
 
-            {/* Ver mais button */}
+        <div className="space-y-4">
+          {exampleGames.map((game) => (
+            <div key={game.id} className="relative">
+              {/* Badge de exemplo no card */}
+              <div className="absolute -top-2 -right-2 z-10">
+                <Badge className="bg-muted text-muted-foreground text-xs">
+                  Exemplo
+                </Badge>
+              </div>
+              <div className="opacity-75 pointer-events-none">
+                <GameCard
+                  game={game}
+                  showRequestButton={false}
+                  userStatus="not_requested"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* CTA para jogos reais */}
+      <section className="px-6 py-6">
+        <div className="text-center p-6 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20">
+          <h3 className="text-lg font-bold text-foreground mb-2">
+            Pronto para jogar?
+          </h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Veja jogos reais criados por jogadores na sua região
+          </p>
+          <Button 
+            variant="tennis" 
+            size="lg"
+            onClick={() => navigate("/games")}
+            className="shadow-glow"
+          >
+            <Search className="w-5 h-5" />
+            Ver jogos reais perto de mim
+            <ArrowRight className="w-5 h-5" />
+          </Button>
+        </div>
+      </section>
+
+      {/* Real Featured Games Section - só mostra se houver jogos reais */}
+      {hasRealGames && (
+        <section className="px-6 py-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-foreground">
+              🔥 Próximos jogos reais
+            </h2>
             {availableGames.length > 3 && (
               <Button 
-                variant="outline" 
-                className="w-full"
+                variant="ghost" 
+                size="sm"
                 onClick={() => navigate("/games")}
+                className="text-primary"
               >
-                Ver todos os {availableGames.length} jogos
+                Ver todos
                 <ChevronRight className="w-4 h-4" />
               </Button>
             )}
           </div>
-        )}
-      </section>
+
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <p className="text-muted-foreground">Carregando jogos...</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {featuredGames.map((game) => (
+                <GameCard
+                  key={game.id}
+                  game={game}
+                  showRequestButton={true}
+                  onRequestJoin={() => handleRequestJoin(game.id)}
+                  userStatus={getUserGameStatus(game.id)}
+                />
+              ))}
+
+              {/* Ver mais button */}
+              {availableGames.length > 3 && (
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => navigate("/games")}
+                >
+                  Ver todos os {availableGames.length} jogos
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Quick Stats */}
       <section className="px-6 py-6 mb-4">

@@ -11,7 +11,7 @@ import { toast } from "@/hooks/use-toast";
 type TabType = "available" | "my-games" | "participating" | "pending";
 
 export const GamesPage = () => {
-  const { user } = useSimpleUser();
+  const { user, requireIdentification, isIdentified } = useSimpleUser();
   const { 
     availableGames, 
     myCreatedGames, 
@@ -28,13 +28,21 @@ export const GamesPage = () => {
   const pendingForMe = getPendingRequestsForMyGames();
 
   const handleRequestJoin = (gameId: string) => {
-    const success = requestJoin(gameId);
-    if (success) {
-      toast({
-        title: "Solicitação enviada! 🎾",
-        description: "Aguarde a aprovação do organizador.",
-      });
-    }
+    requireIdentification(() => {
+      const success = requestJoin(gameId);
+      if (success) {
+        toast({
+          title: "Solicitação enviada! 🎾",
+          description: "Aguarde a aprovação do organizador.",
+        });
+      }
+    });
+  };
+
+  const handleCreateGame = () => {
+    requireIdentification(() => {
+      setShowCreateForm(true);
+    });
   };
 
   const tabs = [
@@ -66,14 +74,16 @@ export const GamesPage = () => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Tênis</h1>
-            <p className="text-sm text-muted-foreground">
-              Olá, {user?.name}! 👋
-            </p>
+            {user?.name && (
+              <p className="text-sm text-muted-foreground">
+                Olá, {user.name}! 👋
+              </p>
+            )}
           </div>
           <Button
             variant="tennis"
             size="sm"
-            onClick={() => setShowCreateForm(true)}
+            onClick={handleCreateGame}
           >
             <PlusCircle className="w-4 h-4" />
             Criar jogo
