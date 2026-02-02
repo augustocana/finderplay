@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { ChatMessage } from "@/types/game";
 import { useSimpleUser } from "./useSimpleUser";
+import { messageSchema, validateData } from "@/lib/validationSchemas";
 
 const MESSAGES_KEY = "play_finder_messages";
+const MAX_MESSAGE_LENGTH = 2000;
 
 export const useChat = (gameId: string) => {
   const { user } = useSimpleUser();
@@ -37,6 +39,13 @@ export const useChat = (gameId: string) => {
   // Enviar mensagem
   const sendMessage = (content: string) => {
     if (!user || !content.trim()) return false;
+    
+    // Validate message content (client-side for UX)
+    const trimmedContent = content.trim();
+    if (trimmedContent.length > MAX_MESSAGE_LENGTH) {
+      console.warn(`Message too long: ${trimmedContent.length} chars (max: ${MAX_MESSAGE_LENGTH})`);
+      return false;
+    }
 
     const newMessage: ChatMessage = {
       id: `msg-${Date.now()}`,
