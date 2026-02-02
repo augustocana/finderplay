@@ -84,10 +84,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "game_invites_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "game_invites_matched_player_id_fkey"
             columns: ["matched_player_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_invites_matched_player_id_fkey"
+            columns: ["matched_player_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -126,10 +140,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "match_requests_invite_id_fkey"
+            columns: ["invite_id"]
+            isOneToOne: false
+            referencedRelation: "public_game_invites"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "match_requests_requester_id_fkey"
             columns: ["requester_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -171,8 +199,29 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "messages_invite_id_fkey"
+            columns: ["invite_id"]
+            isOneToOne: false
+            referencedRelation: "public_game_invites"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "messages_receiver_id_fkey"
             columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -181,7 +230,7 @@ export type Database = {
             foreignKeyName: "messages_sender_id_fkey"
             columns: ["sender_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -266,7 +315,93 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_game_invites: {
+        Row: {
+          city: string | null
+          created_at: string | null
+          creator_id: string | null
+          date: string | null
+          desired_level: number | null
+          game_type: string | null
+          id: string | null
+          level_range_max: number | null
+          level_range_min: number | null
+          neighborhood: string | null
+          status: string | null
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string | null
+          creator_id?: string | null
+          date?: string | null
+          desired_level?: number | null
+          game_type?: string | null
+          id?: string | null
+          level_range_max?: number | null
+          level_range_min?: number | null
+          neighborhood?: string | null
+          status?: string | null
+        }
+        Update: {
+          city?: string | null
+          created_at?: string | null
+          creator_id?: string | null
+          date?: string | null
+          desired_level?: number | null
+          game_type?: string | null
+          id?: string | null
+          level_range_max?: number | null
+          level_range_min?: number | null
+          neighborhood?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_invites_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_invites_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      public_profiles: {
+        Row: {
+          average_rating: number | null
+          city: string | null
+          games_played: number | null
+          id: string | null
+          name: string | null
+          neighborhood: string | null
+          skill_level: number | null
+        }
+        Insert: {
+          average_rating?: number | null
+          city?: string | null
+          games_played?: number | null
+          id?: string | null
+          name?: string | null
+          neighborhood?: string | null
+          skill_level?: number | null
+        }
+        Update: {
+          average_rating?: number | null
+          city?: string | null
+          games_played?: number | null
+          id?: string | null
+          name?: string | null
+          neighborhood?: string | null
+          skill_level?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_anonymous_user_id: { Args: never; Returns: string }
