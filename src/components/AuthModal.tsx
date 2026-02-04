@@ -123,6 +123,13 @@ export const AuthModal = () => {
     e.preventDefault();
     setError("");
 
+    // Verificar se usuário está autenticado antes de criar perfil
+    if (!user) {
+      setError("Você precisa estar logado para criar um perfil. Faça login novamente.");
+      setStep("email");
+      return;
+    }
+
     if (!name.trim()) {
       setError("Digite seu nome");
       return;
@@ -141,7 +148,7 @@ export const AuthModal = () => {
     }
 
     setIsLoading(true);
-    const { error } = await createProfile({
+    const { error: profileError } = await createProfile({
       name: name.trim(),
       skill_level: parseInt(skillLevel),
       city: city.trim(),
@@ -149,8 +156,21 @@ export const AuthModal = () => {
     });
     setIsLoading(false);
 
-    if (error) {
-      setError("Erro ao criar perfil. Tente novamente.");
+    if (profileError) {
+      // Mensagens de erro específicas
+      const errorMessage = profileError.message || "";
+      if (errorMessage.includes("duplicate") || errorMessage.includes("already exists")) {
+        setError("Você já possui um perfil. Atualize a página.");
+      } else if (errorMessage.includes("not authenticated") || errorMessage.includes("JWT")) {
+        setError("Sessão expirada. Faça login novamente.");
+        setStep("email");
+      } else if (errorMessage.includes("row-level security")) {
+        setError("Erro de permissão. Faça login novamente.");
+        setStep("email");
+      } else {
+        setError(`Erro ao criar perfil: ${errorMessage || "Tente novamente."}`);
+      }
+      console.error("Profile creation error:", profileError);
       return;
     }
 
