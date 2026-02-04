@@ -101,14 +101,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, [fetchProfile]);
 
-  // Send OTP to email
+  // Send OTP to email (code only, no magic link)
   const signInWithOtp = async (email: string) => {
     try {
-      const redirectUrl = `${window.location.origin}/`;
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: redirectUrl,
+          // Não passar emailRedirectTo para enviar APENAS código, sem link
+          shouldCreateUser: true,
         },
       });
       
