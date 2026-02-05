@@ -6,43 +6,44 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, ArrowLeft, Loader2 } from "lucide-react";
+import { Mail, Lock, ArrowLeft, Loader2, User, MapPin } from "lucide-react";
 import { z } from "zod";
 
 const emailSchema = z.string().email("Email inválido");
-const otpSchema = z.string().length(6, "O código deve ter 6 dígitos").regex(/^\d+$/, "Apenas números");
+const passwordSchema = z.string().min(6, "A senha deve ter pelo menos 6 caracteres");
 
-type Step = "email" | "otp" | "profile";
+type Step = "login" | "signup" | "forgot-password";
 
 export const AuthModal = () => {
   const { 
     showAuthModal, 
     setShowAuthModal, 
-    signInWithOtp, 
-    verifyOtp, 
-    createProfile,
-    user,
-    profile,
+    signIn,
+    signUp,
+    resetPassword,
+    pendingAction,
     clearPendingAction 
   } = useAuth();
   const { toast } = useToast();
   
-  const [step, setStep] = useState<Step>("email");
+  const [step, setStep] = useState<Step>("login");
   const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   
-  // Profile fields
+  // Profile fields (for signup)
   const [name, setName] = useState("");
   const [skillLevel, setSkillLevel] = useState("");
   const [city, setCity] = useState("");
   const [neighborhood, setNeighborhood] = useState("");
 
   const resetForm = () => {
-    setStep("email");
+    setStep("login");
     setEmail("");
-    setOtp("");
+    setPassword("");
+    setConfirmPassword("");
     setName("");
     setSkillLevel("");
     setCity("");
@@ -56,77 +57,65 @@ export const AuthModal = () => {
     setShowAuthModal(false);
   };
 
-  const handleSendOtp = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     
     try {
       emailSchema.parse(email);
-    } catch {
-      setError("Email inválido");
-      return;
+      passwordSchema.parse(password);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        setError(err.errors[0].message);
+        return;
+      }
     }
 
     setIsLoading(true);
-    const { error } = await signInWithOtp(email);
+    const { error } = await signIn(email, password);
     setIsLoading(false);
 
     if (error) {
-      setError("Erro ao enviar código. Tente novamente.");
+      const msg = error.message.toLowerCase();
+      if (msg.includes("invalid login credentials") || msg.includes("invalid_credentials")) {
+        setError("Email ou senha incorretos");
+      } else if (msg.includes("email not confirmed")) {
+        setError("Confirme seu email antes de entrar. Verifique sua caixa de entrada.");
+      } else {
+        setError("Erro ao entrar. Tente novamente.");
+      }
       return;
     }
 
     toast({
-      title: "Código enviado!",
-      description: `Verifique seu email ${email}`,
+      title: "Bem-vindo!",
+      description: "Login realizado com sucesso",
     });
-    setStep("otp");
+    
+    // Execute pending action if exists
+    if (pendingAction) {
+      pendingAction();
+    }
+    
+    handleClose();
   };
 
-  const handleVerifyOtp = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     
     try {
-      otpSchema.parse(otp);
-    } catch {
-      setError("Código deve ter 6 dígitos");
-      return;
-    }
-
-    setIsLoading(true);
-    const { error } = await verifyOtp(email, otp);
-    setIsLoading(false);
-
-    if (error) {
-      setError("Código inválido ou expirado. Tente novamente.");
-      return;
-    }
-
-    // Check if user already has profile
-    // If not, go to profile creation step
-    // The auth state change will update the profile state
-    setTimeout(() => {
-      if (!profile) {
-        setStep("profile");
-      } else {
-        handleClose();
-        toast({
-          title: "Bem-vindo de volta!",
-          description: `Olá, ${profile.name}`,
-        });
+      emailSchema.parse(email);
+      passwordSchema.parse(password);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        setError(err.errors[0].message);
+        return;
       }
-    }, 500);
-  };
+    }
 
-  const handleCreateProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-
-    // Verificar se usuário está autenticado antes de criar perfil
-    if (!user) {
-      setError("Você precisa estar logado para criar um perfil. Faça login novamente.");
-      setStep("email");
+    if (password !== confirmPassword) {
+      setError("As senhas não coincidem");
       return;
     }
 
@@ -148,7 +137,7 @@ export const AuthModal = () => {
     }
 
     setIsLoading(true);
-    const { error: profileError } = await createProfile({
+    const { error } = await signUp(email, password, {
       name: name.trim(),
       skill_level: parseInt(skillLevel),
       city: city.trim(),
@@ -156,53 +145,78 @@ export const AuthModal = () => {
     });
     setIsLoading(false);
 
-    if (profileError) {
-      // Mensagens de erro específicas
-      const errorMessage = profileError.message || "";
-      if (errorMessage.includes("duplicate") || errorMessage.includes("already exists")) {
-        setError("Você já possui um perfil. Atualize a página.");
-      } else if (errorMessage.includes("not authenticated") || errorMessage.includes("JWT")) {
-        setError("Sessão expirada. Faça login novamente.");
-        setStep("email");
-      } else if (errorMessage.includes("row-level security")) {
-        setError("Erro de permissão. Faça login novamente.");
-        setStep("email");
+    if (error) {
+      const msg = error.message.toLowerCase();
+      if (msg.includes("already registered") || msg.includes("already exists")) {
+        setError("Este email já está cadastrado. Faça login.");
+      } else if (msg.includes("password")) {
+        setError("A senha deve ter pelo menos 6 caracteres");
       } else {
-        setError(`Erro ao criar perfil: ${errorMessage || "Tente novamente."}`);
+        setError("Erro ao criar conta. Tente novamente.");
       }
-      console.error("Profile creation error:", profileError);
       return;
     }
 
     toast({
       title: "Conta criada!",
-      description: "Agora você pode criar e participar de jogos",
+      description: "Verifique seu email para confirmar o cadastro",
     });
-    resetForm();
-    setShowAuthModal(false);
+    
+    // Execute pending action if exists
+    if (pendingAction) {
+      pendingAction();
+    }
+    
+    handleClose();
   };
 
-  // If user is authenticated but has no profile, show profile step
-  const effectiveStep = user && !profile ? "profile" : step;
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    
+    try {
+      emailSchema.parse(email);
+    } catch {
+      setError("Email inválido");
+      return;
+    }
+
+    setIsLoading(true);
+    const { error } = await resetPassword(email);
+    setIsLoading(false);
+
+    if (error) {
+      setError("Erro ao enviar email. Tente novamente.");
+      return;
+    }
+
+    toast({
+      title: "Email enviado!",
+      description: "Verifique sua caixa de entrada para redefinir a senha",
+    });
+    setStep("login");
+    setEmail("");
+  };
 
   return (
     <Dialog open={showAuthModal} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="sm:max-w-md max-w-[calc(100vw-2rem)] mx-auto">
         <DialogHeader>
           <DialogTitle className="text-xl">
-            {effectiveStep === "email" && "Entrar no Play Finder"}
-            {effectiveStep === "otp" && "Digite o código"}
-            {effectiveStep === "profile" && "Complete seu perfil"}
+            {step === "login" && "Entrar"}
+            {step === "signup" && "Criar conta"}
+            {step === "forgot-password" && "Esqueci minha senha"}
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            {effectiveStep === "email" && "Criamos sua conta apenas para guardar seu histórico e seus jogos."}
-            {effectiveStep === "otp" && `Enviamos um código de 6 dígitos para ${email}`}
-            {effectiveStep === "profile" && "Só precisamos de algumas informações básicas"}
+            {step === "login" && "Entre com seu email e senha"}
+            {step === "signup" && "Preencha os dados para criar sua conta"}
+            {step === "forgot-password" && "Enviaremos um link para redefinir sua senha"}
           </DialogDescription>
         </DialogHeader>
 
-        {effectiveStep === "email" && (
-          <form onSubmit={handleSendOtp} className="space-y-4">
+        {/* Login Form */}
+        {step === "login" && (
+          <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
@@ -220,88 +234,126 @@ export const AuthModal = () => {
               </div>
             </div>
             
+            <div className="space-y-2">
+              <Label htmlFor="password">Senha</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-10"
+                  autoComplete="current-password"
+                />
+              </div>
+            </div>
+            
             {error && <p className="text-sm text-destructive">{error}</p>}
             
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Enviando...
+                  Entrando...
                 </>
               ) : (
-                "Enviar código"
+                "Entrar"
               )}
             </Button>
+            
+            <div className="flex flex-col gap-2 text-center text-sm">
+              <button 
+                type="button"
+                onClick={() => { setStep("forgot-password"); setError(""); }}
+                className="text-primary hover:underline"
+              >
+                Esqueci minha senha
+              </button>
+              <p className="text-muted-foreground">
+                Não tem conta?{" "}
+                <button 
+                  type="button"
+                  onClick={() => { setStep("signup"); setError(""); }}
+                  className="text-primary hover:underline"
+                >
+                  Criar conta
+                </button>
+              </p>
+            </div>
           </form>
         )}
 
-        {effectiveStep === "otp" && (
-          <form onSubmit={handleVerifyOtp} className="space-y-4">
+        {/* Signup Form */}
+        {step === "signup" && (
+          <form onSubmit={handleSignup} className="space-y-4">
             <Button 
               type="button" 
               variant="ghost" 
               size="sm" 
               className="p-0 h-auto mb-2"
-              onClick={() => setStep("email")}
+              onClick={() => { setStep("login"); setError(""); }}
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
-              Voltar
+              Voltar ao login
             </Button>
             
             <div className="space-y-2">
-              <Label htmlFor="otp">Código de 6 dígitos</Label>
-              <Input
-                id="otp"
-                type="text"
-                inputMode="numeric"
-                placeholder="000000"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                className="text-center text-2xl tracking-widest font-mono"
-                autoFocus
-                maxLength={6}
-              />
+              <Label htmlFor="signup-email">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="signup-email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10"
+                  autoComplete="email"
+                />
+              </div>
             </div>
             
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            
-            <Button type="submit" className="w-full" disabled={isLoading || otp.length !== 6}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Verificando...
-                </>
-              ) : (
-                "Verificar"
-              )}
-            </Button>
-            
-            <p className="text-center text-sm text-muted-foreground">
-              Não recebeu?{" "}
-              <button 
-                type="button"
-                onClick={() => signInWithOtp(email)}
-                className="text-primary underline"
-              >
-                Reenviar código
-              </button>
-            </p>
-          </form>
-        )}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="signup-password">Senha</Label>
+                <Input
+                  id="signup-password"
+                  type="password"
+                  placeholder="••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirmar</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  placeholder="••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
+                />
+              </div>
+            </div>
 
-        {effectiveStep === "profile" && (
-          <form onSubmit={handleCreateProfile} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nome ou apelido</Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Como você quer ser chamado?"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                maxLength={100}
-                autoFocus
-              />
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Como quer ser chamado?"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="pl-10"
+                  maxLength={100}
+                />
+              </div>
             </div>
             
             <div className="space-y-2">
@@ -351,10 +403,56 @@ export const AuthModal = () => {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Criando...
+                  Criando conta...
                 </>
               ) : (
                 "Criar conta"
+              )}
+            </Button>
+          </form>
+        )}
+
+        {/* Forgot Password Form */}
+        {step === "forgot-password" && (
+          <form onSubmit={handleForgotPassword} className="space-y-4">
+            <Button 
+              type="button" 
+              variant="ghost" 
+              size="sm" 
+              className="p-0 h-auto mb-2"
+              onClick={() => { setStep("login"); setError(""); }}
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Voltar ao login
+            </Button>
+            
+            <div className="space-y-2">
+              <Label htmlFor="reset-email">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="reset-email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10"
+                  autoFocus
+                  autoComplete="email"
+                />
+              </div>
+            </div>
+            
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                "Enviar link de reset"
               )}
             </Button>
           </form>

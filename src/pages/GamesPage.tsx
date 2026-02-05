@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { PlusCircle, Search, Calendar, User, Bell, LogIn } from "lucide-react";
+import { PlusCircle, Search, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { GameFilters, GameFiltersState } from "@/components/GameFilters";
@@ -23,7 +23,7 @@ const isTimeInPeriod = (timeSlot: string, period: string): boolean => {
 };
 
 export const GamesPage = () => {
-  const { profile, isAuthenticated, requireAuth } = useAuth();
+  const { profile } = useAuth();
   const { games, myCreatedGames, isLoading, deleteGame } = useGameInvites();
   
   const [activeTab, setActiveTab] = useState<TabType>("available");
@@ -71,10 +71,8 @@ export const GamesPage = () => {
   }, [games, myCreatedGames, activeTab, filters]);
 
   const handleCreateGame = () => {
-    requireAuth(() => {
-      setEditingGame(null);
-      setShowCreateForm(true);
-    });
+    setEditingGame(null);
+    setShowCreateForm(true);
   };
 
   const handleEditGame = (game: any) => {
@@ -101,28 +99,16 @@ export const GamesPage = () => {
             )}
           </div>
           
-          {isAuthenticated ? (
-            <Button
-              variant="tennis"
-              size="sm"
-              onClick={handleCreateGame}
-              className="shrink-0"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span className="hidden sm:inline">Criar jogo</span>
-              <span className="sm:hidden">Criar</span>
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => requireAuth()}
-              className="shrink-0"
-            >
-              <LogIn className="w-4 h-4" />
-              <span className="hidden sm:inline">Entrar</span>
-            </Button>
-          )}
+          <Button
+            variant="tennis"
+            size="sm"
+            onClick={handleCreateGame}
+            className="shrink-0"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">Criar jogo</span>
+            <span className="sm:hidden">Criar</span>
+          </Button>
         </div>
 
         {/* Tabs */}
@@ -160,23 +146,7 @@ export const GamesPage = () => {
 
       {/* Content */}
       <main className="p-4 sm:p-6">
-        {!isAuthenticated ? (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary flex items-center justify-center">
-              <LogIn className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              Entre para ver jogos
-            </h3>
-            <p className="text-muted-foreground mb-4 max-w-sm mx-auto">
-              Crie uma conta rápida para encontrar parceiros e organizar partidas
-            </p>
-            <Button variant="tennis" onClick={() => requireAuth()}>
-              <LogIn className="w-4 h-4" />
-              Entrar agora
-            </Button>
-          </div>
-        ) : isLoading ? (
+        {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <p className="text-muted-foreground">Carregando jogos...</p>
           </div>
