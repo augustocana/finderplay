@@ -19,15 +19,16 @@ interface AuthContextType {
   profile: Profile | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  signInWithOtp: (email: string) => Promise<{ error: Error | null }>;
-  verifyOtp: (email: string, token: string) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, profileData: { name: string; skill_level: number; city: string; neighborhood: string }) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
-  createProfile: (data: { name: string; skill_level: number; city: string; neighborhood: string }) => Promise<{ error: Error | null }>;
+  resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
   updateProfile: (data: Partial<Profile>) => Promise<{ error: Error | null }>;
-  requireAuth: (callback?: () => void) => boolean;
   showAuthModal: boolean;
   setShowAuthModal: (show: boolean) => void;
   pendingAction: (() => void) | null;
+  requireAuth: (callback?: () => void) => boolean;
   clearPendingAction: () => void;
 }
 
@@ -101,15 +102,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, [fetchProfile]);
 
-  // Send OTP to email (code only, no magic link)
-  const signInWithOtp = async (email: string) => {
+  // Sign in with email and password
+  const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithOtp({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
-        options: {
-          // Não passar emailRedirectTo para enviar APENAS código, sem link
-          shouldCreateUser: true,
-        },
+        password,
       });
       
       if (error) {
@@ -122,17 +120,63 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Verify OTP code
-  const verifyOtp = async (email: string, token: string) => {
+  // Sign up with email, password and profile data
+  const signUp = async (
+    email: string, 
+    password: string, 
+    profileData: { name: string; skill_level: number; city: string; neighborhood: string }
+  ) => {
     try {
-      const { error } = await supabase.auth.verifyOtp({
+      // Validate input
+      if (!profileData.name.trim() || profileData.name.length > 100) {
+        return { error: new Error("Nome inválido") };
+      }
+      if (!profileData.city.trim() || profileData.city.length > 100) {
+        return { error: new Error("Cidade inválida") };
+      }
+      if (!profileData.neighborhood.trim() || profileData.neighborhood.length > 100) {
+        return { error: new Error("Bairro inválido") };
+      }
+      if (profileData.skill_level < 1 || profileData.skill_level > 6) {
+        return { error: new Error("Classe inválida") };
+      }
+
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
-        token,
-        type: "email",
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+        },
       });
       
-      if (error) {
-        return { error };
+      if (authError) {
+        return { error: authError };
+      }
+
+      // If user was created and we have a session, create profile
+      if (authData.user && authData.session) {
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .insert({
+            user_id: authData.user.id,
+            name: profileData.name.trim(),
+            skill_level: profileData.skill_level,
+            city: profileData.city.trim(),
+            neighborhood: profileData.neighborhood.trim(),
+            dominant_hand: "direita",
+            frequency: "casual",
+          });
+
+        if (profileError) {
+          console.error("Profile creation error:", profileError);
+          return { error: profileError };
+        }
+
+        // Fetch the new profile
+        const newProfile = await fetchProfile(authData.user.id);
+        setProfile(newProfile);
       }
       
       return { error: null };
@@ -153,52 +197,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  // Create profile for new user
-  const createProfile = async (data: { name: string; skill_level: number; city: string; neighborhood: string }) => {
-    if (!user) {
-      return { error: new Error("Usuário não autenticado") };
-    }
-
-    // Validate input
-    if (!data.name.trim() || data.name.length > 100) {
-      return { error: new Error("Nome inválido") };
-    }
-    if (!data.city.trim() || data.city.length > 100) {
-      return { error: new Error("Cidade inválida") };
-    }
-    if (!data.neighborhood.trim() || data.neighborhood.length > 100) {
-      return { error: new Error("Bairro inválido") };
-    }
-    if (data.skill_level < 1 || data.skill_level > 6) {
-      return { error: new Error("Classe inválida") };
-    }
-
+  // Reset password - send email
+  const resetPassword = async (email: string) => {
     try {
-      const { data: newProfile, error } = await supabase
-        .from("profiles")
-        .insert({
-          user_id: user.id,
-          name: data.name.trim(),
-          skill_level: data.skill_level,
-          city: data.city.trim(),
-          neighborhood: data.neighborhood.trim(),
-          dominant_hand: "direita",
-          frequency: "casual",
-        })
-        .select("id, name, skill_level, city, neighborhood, games_played, average_rating")
-        .single();
-
+      const redirectUrl = `${window.location.origin}/reset-password`;
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl,
+      });
+      
       if (error) {
         return { error };
       }
-
-      setProfile(newProfile as Profile);
-      setShowAuthModal(false);
       
-      // Execute pending action if exists
-      if (pendingAction) {
-        pendingAction();
-        setPendingAction(null);
+      return { error: null };
+    } catch (err) {
+      return { error: err as Error };
+    }
+  };
+
+  // Update password (after clicking reset link)
+  const updatePassword = async (newPassword: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      
+      if (error) {
+        return { error };
       }
       
       return { error: null };
@@ -255,15 +281,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       profile,
       isLoading,
       isAuthenticated,
-      signInWithOtp,
-      verifyOtp,
+      signIn,
+      signUp,
       signOut,
-      createProfile,
+      resetPassword,
+      updatePassword,
       updateProfile,
-      requireAuth,
       showAuthModal,
       setShowAuthModal,
       pendingAction,
+      requireAuth,
       clearPendingAction,
     }}>
       {children}
