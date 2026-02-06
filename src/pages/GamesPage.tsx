@@ -23,7 +23,7 @@ const isTimeInPeriod = (timeSlot: string, period: string): boolean => {
 };
 
 export const GamesPage = () => {
-  const { profile } = useAuth();
+  const { profile, requireAuth, isAuthenticated } = useAuth();
   const { games, myCreatedGames, isLoading, deleteGame } = useGameInvites();
   
   const [activeTab, setActiveTab] = useState<TabType>("available");
