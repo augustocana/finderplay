@@ -70,14 +70,20 @@ export const GamesPage = () => {
     });
   }, [games, myCreatedGames, activeTab, filters]);
 
+  const { requireAuth, isAuthenticated } = useAuth();
+
   const handleCreateGame = () => {
-    setEditingGame(null);
-    setShowCreateForm(true);
+    requireAuth(() => {
+      setEditingGame(null);
+      setShowCreateForm(true);
+    });
   };
 
   const handleEditGame = (game: any) => {
-    setEditingGame(game);
-    setShowCreateForm(true);
+    requireAuth(() => {
+      setEditingGame(game);
+      setShowCreateForm(true);
+    });
   };
 
   const tabs = [
