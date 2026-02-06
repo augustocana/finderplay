@@ -70,7 +70,6 @@ export const GamesPage = () => {
     });
   }, [games, myCreatedGames, activeTab, filters]);
 
-  const { requireAuth, isAuthenticated } = useAuth();
 
   const handleCreateGame = () => {
     requireAuth(() => {
