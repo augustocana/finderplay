@@ -23,7 +23,7 @@ const isTimeInPeriod = (timeSlot: string, period: string): boolean => {
 };
 
 export const GamesPage = () => {
-  const { profile } = useAuth();
+  const { profile, requireAuth, isAuthenticated } = useAuth();
   const { games, myCreatedGames, isLoading, deleteGame } = useGameInvites();
   
   const [activeTab, setActiveTab] = useState<TabType>("available");
@@ -70,14 +70,27 @@ export const GamesPage = () => {
     });
   }, [games, myCreatedGames, activeTab, filters]);
 
+
   const handleCreateGame = () => {
-    setEditingGame(null);
-    setShowCreateForm(true);
+    requireAuth(() => {
+      setEditingGame(null);
+      setShowCreateForm(true);
+    });
   };
 
   const handleEditGame = (game: any) => {
-    setEditingGame(game);
-    setShowCreateForm(true);
+    requireAuth(() => {
+      setEditingGame(game);
+      setShowCreateForm(true);
+    });
+  };
+
+  const handleTabChange = (tab: TabType) => {
+    if (tab === "my-games") {
+      requireAuth(() => setActiveTab("my-games"));
+    } else {
+      setActiveTab(tab);
+    }
   };
 
   const tabs = [
@@ -119,7 +132,7 @@ export const GamesPage = () => {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all duration-200 ${
                   isActive
                     ? "gradient-primary text-primary-foreground"

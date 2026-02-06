@@ -65,22 +65,12 @@ const AppRoutes = () => {
         } />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
 
+        {/* Public routes - explorable without login */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/games" element={<GamesPage />} />
+        <Route path="/game/:gameId" element={<GameDetailsPage />} />
+
         {/* Protected routes - require authentication */}
-        <Route path="/" element={
-          <ProtectedRoute>
-            <HomePage />
-          </ProtectedRoute>
-        } />
-        <Route path="/games" element={
-          <ProtectedRoute>
-            <GamesPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/game/:gameId" element={
-          <ProtectedRoute>
-            <GameDetailsPage />
-          </ProtectedRoute>
-        } />
         <Route path="/profile" element={
           <ProtectedRoute>
             <ProfilePage />

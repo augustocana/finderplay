@@ -208,8 +208,8 @@ export const AuthModal = () => {
             {step === "forgot-password" && "Esqueci minha senha"}
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            {step === "login" && "Entre com seu email e senha"}
-            {step === "signup" && "Preencha os dados para criar sua conta"}
+            {step === "login" && "É só para guardar seus jogos, pedidos e conversas."}
+            {step === "signup" && "Rápido e simples — só para guardar seus jogos e conversas."}
             {step === "forgot-password" && "Enviaremos um link para redefinir sua senha"}
           </DialogDescription>
         </DialogHeader>
