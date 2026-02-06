@@ -86,6 +86,14 @@ export const GamesPage = () => {
     });
   };
 
+  const handleTabChange = (tab: TabType) => {
+    if (tab === "my-games") {
+      requireAuth(() => setActiveTab("my-games"));
+    } else {
+      setActiveTab(tab);
+    }
+  };
+
   const tabs = [
     { id: "available" as TabType, label: "Disponíveis", icon: Search, count: games.length },
     { id: "my-games" as TabType, label: "Meus jogos", icon: Calendar, count: myCreatedGames.length },
