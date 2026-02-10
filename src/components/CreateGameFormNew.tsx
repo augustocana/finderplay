@@ -22,7 +22,7 @@ interface CreateGameFormNewProps {
 }
 
 export const CreateGameFormNew = ({ game, onClose, onSuccess }: CreateGameFormNewProps) => {
-  const { profile } = useAuth();
+  const { profile, requireAuth } = useAuth();
   const { createGame, updateGame } = useGameInvites();
   const { toast } = useToast();
   
@@ -50,6 +50,13 @@ export const CreateGameFormNew = ({ game, onClose, onSuccess }: CreateGameFormNe
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    // Early return: block submit if not authenticated
+    if (!profile) {
+      onClose();
+      requireAuth();
+      return;
+    }
 
     if (!title.trim()) {
       setError("Digite um título");
