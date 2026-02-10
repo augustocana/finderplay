@@ -46,41 +46,64 @@ export const useGameInvites = () => {
   const [games, setGames] = useState<GameInvite[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch all open games
+  // Fetch all open games (works for both authenticated and anonymous users)
   const fetchGames = useCallback(async () => {
-    if (!isAuthenticated) {
-      setGames([]);
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      const { data, error } = await supabase
-        .from("game_invites")
-        .select(`
-          *,
-          profiles!game_invites_creator_id_fkey(name)
-        `)
-        .eq("status", "open")
-        .order("date", { ascending: true })
-        .order("time_slot", { ascending: true });
+      if (isAuthenticated) {
+        // Authenticated: use full table with creator profile join
+        const { data, error } = await supabase
+          .from("game_invites")
+          .select(`
+            *,
+            profiles!game_invites_creator_id_fkey(name)
+          `)
+          .eq("status", "open")
+          .order("date", { ascending: true })
+          .order("time_slot", { ascending: true });
 
-      if (error) {
-        console.error("Error fetching games:", error);
-        toast({
-          title: "Erro ao carregar jogos",
-          description: "Tente novamente mais tarde",
-          variant: "destructive",
-        });
-        return;
+        if (error) {
+          console.error("Error fetching games:", error);
+          toast({
+            title: "Erro ao carregar jogos",
+            description: "Tente novamente mais tarde",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const gamesWithCreator = (data || []).map((game: any) => ({
+          ...game,
+          creator_name: game.profiles?.name || "Jogador",
+        }));
+        setGames(gamesWithCreator);
+      } else {
+        // Anonymous: use public view with public_profiles join
+        const { data, error } = await supabase
+          .from("public_game_invites")
+          .select(`
+            *,
+            public_profiles!game_invites_creator_id_fkey(name)
+          `)
+          .eq("status", "open")
+          .order("date", { ascending: true })
+          .order("time_slot", { ascending: true });
+
+        if (error) {
+          console.error("Error fetching public games:", error);
+          toast({
+            title: "Erro ao carregar jogos",
+            description: "Tente novamente mais tarde",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const gamesWithCreator = (data || []).map((game: any) => ({
+          ...game,
+          creator_name: game.public_profiles?.name || "Jogador",
+        }));
+        setGames(gamesWithCreator as GameInvite[]);
       }
-
-      const gamesWithCreator = (data || []).map((game: any) => ({
-        ...game,
-        creator_name: game.profiles?.name || "Jogador",
-      }));
-
-      setGames(gamesWithCreator);
     } catch (err) {
       console.error("Error fetching games:", err);
     } finally {
