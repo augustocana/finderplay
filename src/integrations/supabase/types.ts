@@ -380,30 +380,18 @@ export type Database = {
       }
       public_profiles: {
         Row: {
-          average_rating: number | null
-          city: string | null
-          games_played: number | null
           id: string | null
           name: string | null
-          neighborhood: string | null
           skill_level: number | null
         }
         Insert: {
-          average_rating?: number | null
-          city?: string | null
-          games_played?: number | null
           id?: string | null
           name?: string | null
-          neighborhood?: string | null
           skill_level?: number | null
         }
         Update: {
-          average_rating?: number | null
-          city?: string | null
-          games_played?: number | null
           id?: string | null
           name?: string | null
-          neighborhood?: string | null
           skill_level?: number | null
         }
         Relationships: []
