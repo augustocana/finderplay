@@ -49,61 +49,59 @@ export const useGameInvites = () => {
   // Fetch all open games (works for both authenticated and anonymous users)
   const fetchGames = useCallback(async () => {
     try {
+      let rawGames: any[] = [];
+
       if (isAuthenticated) {
-        // Authenticated: use full table with creator profile join
         const { data, error } = await supabase
           .from("game_invites")
-          .select(`
-            *,
-            profiles!game_invites_creator_id_fkey(name)
-          `)
+          .select("*")
           .eq("status", "open")
           .order("date", { ascending: true })
           .order("time_slot", { ascending: true });
 
         if (error) {
           console.error("Error fetching games:", error);
-          toast({
-            title: "Erro ao carregar jogos",
-            description: "Tente novamente mais tarde",
-            variant: "destructive",
-          });
+          toast({ title: "Erro ao carregar jogos", description: "Tente novamente mais tarde", variant: "destructive" });
           return;
         }
+        rawGames = data || [];
 
-        const gamesWithCreator = (data || []).map((game: any) => ({
-          ...game,
-          creator_name: game.profiles?.name || "Jogador",
-        }));
-        setGames(gamesWithCreator);
+        // Fetch creator names from profiles
+        const creatorIds = [...new Set(rawGames.map((g) => g.creator_id).filter(Boolean))];
+        if (creatorIds.length > 0) {
+          const { data: profiles } = await supabase.from("profiles").select("id, name").in("id", creatorIds);
+          if (profiles) {
+            const map = Object.fromEntries(profiles.map((p) => [p.id, p.name]));
+            rawGames = rawGames.map((g) => ({ ...g, creator_name: map[g.creator_id] || "Jogador" }));
+          }
+        }
       } else {
-        // Anonymous: use public view with public_profiles join
         const { data, error } = await supabase
           .from("public_game_invites")
-          .select(`
-            *,
-            public_profiles!game_invites_creator_id_fkey(name)
-          `)
+          .select("*")
           .eq("status", "open")
           .order("date", { ascending: true })
           .order("time_slot", { ascending: true });
 
         if (error) {
           console.error("Error fetching public games:", error);
-          toast({
-            title: "Erro ao carregar jogos",
-            description: "Tente novamente mais tarde",
-            variant: "destructive",
-          });
+          toast({ title: "Erro ao carregar jogos", description: "Tente novamente mais tarde", variant: "destructive" });
           return;
         }
+        rawGames = data || [];
 
-        const gamesWithCreator = (data || []).map((game: any) => ({
-          ...game,
-          creator_name: game.public_profiles?.name || "Jogador",
-        }));
-        setGames(gamesWithCreator as GameInvite[]);
+        // Fetch creator names from public_profiles
+        const creatorIds = [...new Set(rawGames.map((g) => g.creator_id).filter(Boolean))];
+        if (creatorIds.length > 0) {
+          const { data: profiles } = await supabase.from("public_profiles").select("id, name").in("id", creatorIds);
+          if (profiles) {
+            const map = Object.fromEntries(profiles.map((p) => [p.id, p.name]));
+            rawGames = rawGames.map((g) => ({ ...g, creator_name: map[g.creator_id] || "Jogador" }));
+          }
+        }
       }
+
+      setGames(rawGames as GameInvite[]);
     } catch (err) {
       console.error("Error fetching games:", err);
     } finally {
